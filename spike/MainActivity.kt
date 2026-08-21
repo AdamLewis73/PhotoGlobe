@@ -230,6 +230,8 @@ class MainActivity : ComponentActivity() {
             return@withContext
         }
 
+        probeLocationColumns(collection)
+
         val work = if (limit != null && limit < ids.size) ids.subList(0, limit) else ids
 
         // Step 2: read EXIF per photo. Expensive - this is the number we actually need.
@@ -324,6 +326,45 @@ class MainActivity : ComponentActivity() {
         logLine("")
         logLine("Q-008 read: under ~2s full scan  => MVP can skip the database")
         logLine("            tens of seconds      => persistence is required")
+    }
+
+
+    // Cheap-path probe. MediaStore carries LATITUDE/LONGITUDE columns, deprecated at API 29
+    // and redacted for non-privileged apps. A system gallery reads a column here; we have to
+    // open and parse each file. If these ever returned real values the whole scan cost would
+    // collapse to one cursor pass - almost certainly they do not, but confirm rather than
+    // assume, because the payoff would be large.
+    private fun probeLocationColumns(collection: Uri) {
+        try {
+            contentResolver.query(
+                collection,
+                arrayOf(MediaStore.Images.Media._ID, "latitude", "longitude"),
+                null,
+                null,
+                MediaStore.Images.Media.DATE_TAKEN + " DESC"
+            )?.use { c ->
+                val latCol = c.getColumnIndex("latitude")
+                val lngCol = c.getColumnIndex("longitude")
+                if (latCol < 0 || lngCol < 0) {
+                    logLine("MediaStore lat/lng columns: not present")
+                    return
+                }
+                var checked = 0
+                var nonZero = 0
+                while (c.moveToNext() && checked < 500) {
+                    if (c.getDouble(latCol) != 0.0 || c.getDouble(lngCol) != 0.0) nonZero++
+                    checked++
+                }
+                logLine("MediaStore lat/lng columns: " + nonZero + " of " + checked + " non-zero")
+                if (nonZero > 0) {
+                    logLine("  *** CHEAP PATH MAY EXIST - investigate before M1 ***")
+                } else {
+                    logLine("  redacted as expected - per-file EXIF read is required")
+                }
+            } ?: logLine("MediaStore lat/lng columns: query returned null")
+        } catch (t: Throwable) {
+            logLine("MediaStore lat/lng columns: unavailable (" + t.javaClass.simpleName + ")")
+        }
     }
 
     // ----------------------------------------------------------------- picker

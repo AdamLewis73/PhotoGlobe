@@ -122,3 +122,22 @@ Conclusions
   `docs/OPEN-QUESTIONS.md`
 - Settle the map SDK (D-012), weighted by D-015
 - Delete this folder
+
+---
+
+## Note on what "scan time" means (D-020)
+
+The reference implementation has no scan delay because it queries an index it built
+incrementally over the life of the device — and, being a system app, probably reads
+location straight from a MediaStore column instead of parsing EXIF per file.
+
+PhotoGlobe pays that cost **once**, on first run. From run two onward, incremental sync
+touches only new photos and the app is exactly as instant. So the number this spike
+produces sizes two things and nothing else:
+
+- whether the MVP needs persistence at all (Q-008)
+- how the first-run experience has to be designed (D-021: newest-first, progressive)
+
+The spike also probes MediaStore's deprecated LATITUDE/LONGITUDE columns (D-022). If they
+return real values, the cheap path exists and the scan collapses to one cursor pass.
+Expect `redacted as expected`; record it either way.

@@ -167,3 +167,38 @@ Japan"), which looks like place awareness but almost certainly is not. At maximu
 a US state is a few dozen pixels across, so every photo in it lands in one cluster cell by
 geometry alone. Offline geocoding (D-007) therefore stays in M3, where it is needed for
 stats that name places — not in M1 for map bubbles that merely sit over them.
+
+### D-020 · 2026-08-08 · active
+**Library scan cost is a first-run cost only. The reference implementation is instant
+because it queries an index it already built, not because scanning is cheap.**
+Raised by the owner: Samsung Gallery's map appears with no scan delay at all. Two reasons,
+neither available to us on first run:
+
+1. **It indexed incrementally over the life of the device.** Every photo was processed once
+   as it arrived. The map view is a database query over an already-populated table.
+2. **It very likely never reads EXIF.** Android's media provider already extracts location
+   during its own media scan, and `MediaStore` exposes LATITUDE/LONGITUDE columns for it -
+   deprecated at API 29 and redacted for non-privileged apps. A system gallery reads a
+   column; a third-party app must call `setRequireOriginal()`, open each file and parse its
+   EXIF header. Database read versus file I/O, per photo.
+
+**Consequence:** from run two onward, PhotoGlobe is exactly as instant as the reference,
+because it does the same thing - queries its own index (D-006 incremental sync touches only
+photos added since last time). Scan time sizes exactly two things: whether persistence is
+needed at all (Q-008), and the first-run experience. It is not a recurring cost, and
+should not be described as one.
+
+### D-021 · 2026-08-08 · active
+**First-run scan renders newest-first and progressively.**
+Photos are enumerated `DATE_TAKEN DESC` and drawn as they resolve, so recent trips - the
+ones the user most wants to see - appear within the first second or two while the rest
+backfills behind them. Follows from D-020: the first run is the only slow one, so make it
+usable immediately rather than blocking on completion. Turns the worst moment in the app
+into the most interesting one. Applies to M1 even if the M0 numbers turn out to be fast.
+
+### D-022 · 2026-08-08 · active
+**Confirm the cheap path exists or does not, rather than assuming.**
+The M0 spike probes MediaStore's deprecated LATITUDE/LONGITUDE columns directly. If they
+returned real values the entire scan cost would collapse to a single cursor pass. They
+almost certainly will not - but the payoff is large enough that a five-line check beats an
+assumption. Result goes in the M0 findings.

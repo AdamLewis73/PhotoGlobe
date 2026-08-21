@@ -80,6 +80,32 @@ Implementation:
   app is open. Optional polish, not load-bearing.
 - **Reconciliation.** The same pass detects photos deleted since last scan (Q-007).
 
+
+### Why the reference implementation has no scan delay (D-020)
+
+Samsung Gallery's map opens instantly. It is not scanning — it is querying an index it
+already holds:
+
+- **It indexed incrementally over the life of the device.** Each photo was processed once,
+  as it arrived. The map is a query over a populated table.
+- **It very likely never reads EXIF.** The media provider already extracts location during
+  its own scan, and `MediaStore` exposes LATITUDE/LONGITUDE columns for it — deprecated at
+  API 29 and redacted for non-privileged apps. A system gallery reads a column; we must
+  call `setRequireOriginal()`, open each file, and parse its EXIF header. Database read
+  versus file I/O, per photo.
+
+**From run two onward PhotoGlobe is exactly as instant**, because it does the same thing:
+queries its own index. Incremental sync touches only what is new — a few dozen rows,
+milliseconds.
+
+So scan cost sizes precisely two things: whether persistence is needed at all (Q-008), and
+the first-run experience. It is not a recurring cost. Do not describe it as one.
+
+**First run renders newest-first and progressively (D-021).** Enumerate `DATE_TAKEN DESC`
+and draw photos as they resolve. Recent trips appear in the first second or two and the
+rest backfills behind the user, so the one slow run is usable immediately instead of
+blocking on completion.
+
 ## 3. Stack
 
 | Concern | Choice | Notes |
