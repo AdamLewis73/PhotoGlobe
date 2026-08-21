@@ -154,3 +154,36 @@ rewritten.
 
 **Next.** Unchanged: the M0 spike. Q-002 (camera or phone-only) still open but only affects
 M4. git init still pending.
+
+---
+
+## 2026-08-08 (end of session) — Repo initialized, M0 spike written
+
+**Changed on disk.**
+- `git init`, `.gitignore`, first commit containing all planning docs.
+- `spike/` created: `MainActivity.kt` (364 lines), `AndroidManifest.xml`, `README.md`.
+
+**What the spike does.** Single throwaway Activity, four buttons: request media access,
+quick scan of the first 2000 photos with a projected full-scan time, full library scan, and
+a Photo Picker redaction test. It reports total photos, geotagged count and percentage,
+error count, enumerate time, EXIF read time, ms/photo, photos/sec, and sample coordinates.
+
+It enumerates MediaStore in one cursor pass (cheap), then per photo calls
+`MediaStore.setRequireOriginal()` and reads `ExifInterface.latLong` (expensive - this is
+the number Q-008 needs).
+
+**Deliberate design choices worth remembering.**
+- It special-cases the zero-geotagged-and-zero-errors result and prints an explicit
+  ACCESS_MEDIA_LOCATION warning, because that failure is silent and looks exactly like a
+  library with no location data.
+- The quick-scan button exists so a large library gives a projected time in seconds rather
+  than requiring someone to sit through a full run to discover it is too slow.
+- Not shipped as a buildable Gradle project on purpose: the wrapper JAR is a binary and AGP
+  versions drift, so a half-working tree would likely cost an hour. README instead gives a
+  five-minute path - new Empty Activity project, one dependency, paste two files.
+- README specifies testing the **Curated tier first**, because granting Allow all stops the
+  three-option dialog from reappearing without clearing app data.
+
+**Next session.** Run the spike on the owner's S25+, fill in the results template in
+`spike/README.md`, convert Q-001 and Q-008 into decisions, settle D-012 (map SDK), delete
+`spike/`, then start M1.

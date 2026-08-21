@@ -14,6 +14,7 @@ works.
 ---
 
 ## M0 · Feasibility spike — `not started`
+*Code written 2026-08-08 and waiting to be run: see `spike/README.md`.*
 *Half a day to a day. Throwaway code, deleted afterwards.*
 
 Answers Q-001 and Q-008, informs D-012. **No PhotoGlobe code before this is done.**

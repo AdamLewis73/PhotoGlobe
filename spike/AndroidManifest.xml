@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      Android 13+ (API 33): broad access to the image library.
+      Requires a Play Console declaration for a real release. Fine for a spike.
+    -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!--
+      Android 14+ (API 34): the partial / "Curated" grant. Declaring it alongside
+      READ_MEDIA_IMAGES is what makes the system show the three-option dialog
+      (Allow all / Select photos / Don't allow).
+    -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+    <!--
+      THE ONE THAT MATTERS. Without this, MediaStore hands back EXIF with the GPS
+      tags stripped and raises no error at all - every photo simply looks
+      un-geotagged. This is the failure the spike exists to rule out.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_MEDIA_LOCATION" />
+
+    <!-- Android 12L and below. -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <application
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="PhotoGlobe Spike"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PhotoGlobeSpike">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="PhotoGlobe Spike"
+            android:theme="@style/Theme.PhotoGlobeSpike">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
