@@ -3,65 +3,56 @@ package com.photoglobe.spike
 import android.Manifest
 import android.content.ContentUris
 import android.content.pm.PackageManager
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.view.View
+import android.widget.Button
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 /**
- * PhotoGlobe M0 feasibility spike. Throwaway code - delete once the questions are answered.
+ * PhotoGlobe M0 feasibility spike. Throwaway diagnostic - delete once answered.
  *
- * Answers:
- *   Q-001  Can we read GPS from the photo library at all, and does the Android 14+
- *          partial ("Curated") grant also return unredacted coordinates?
- *   Q-008  How long does a full library scan take, and therefore does the MVP need
- *          a database or can it hold everything in memory?
+ * WHAT THIS DOES, in full:
+ *   - lists photo IDs from MediaStore          (contentResolver.query)
+ *   - opens each photo to read its EXIF header (contentResolver.openInputStream)
+ *   - counts how many have GPS coordinates, and times how long that took
+ *   - prints the results on screen
  *
- * Also confirms that the Photo Picker redacts location, as documented.
+ * WHAT THIS DOES NOT DO:
+ *   - no network of any kind. The manifest declares no INTERNET permission,
+ *     so Android blocks it at the OS level.
+ *   - no writing. No files, no database, no preferences. Read-only throughout.
+ *   - no modifying, moving, copying or deleting any photo.
+ *   - nothing persists. Close the app and every result is gone.
  *
- * See spike/README.md for how to run this and what to record.
+ * Answers Q-001 (can we read GPS at all, and does the Android 14+ partial grant
+ * return unredacted coordinates) and Q-008 (how long a full scan takes, and
+ * therefore whether the MVP needs a database). See README.md.
  */
 class MainActivity : ComponentActivity() {
 
-    // String literal rather than Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED so this
-    // compiles regardless of compileSdk - the constant only exists on compileSdk 34+.
+    // String literal rather than the Manifest constant so this compiles on any
+    // compileSdk - READ_MEDIA_VISUAL_USER_SELECTED only exists on 34+.
     private val visualUserSelected = "android.permission.READ_MEDIA_VISUAL_USER_SELECTED"
 
-    private val log = mutableStateListOf<String>()
-    private var progress by mutableStateOf("")
-    private var busy by mutableStateOf(false)
-    private var permState by mutableStateOf("(not checked)")
+    private lateinit var tierView: TextView
+    private lateinit var progressView: TextView
+    private lateinit var logView: TextView
+    private lateinit var scrollView: ScrollView
+
+    private val logText = StringBuilder()
+    private var busy = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -69,7 +60,7 @@ class MainActivity : ComponentActivity() {
         result.forEach { (perm, isGranted) ->
             logLine("  " + perm.substringAfterLast(".") + " = " + if (isGranted) "GRANTED" else "denied")
         }
-        refreshPermissionState()
+        refreshTier()
     }
 
     private val pickerLauncher = registerForActivityResult(
@@ -80,64 +71,64 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        refreshPermissionState()
+        setContentView(buildUi())
+        refreshTier()
         logLine(
             "Device: " + Build.MANUFACTURER + " " + Build.MODEL +
                 ", Android " + Build.VERSION.RELEASE + " (API " + Build.VERSION.SDK_INT + ")"
         )
+        logLine("Read-only. No network permission. Nothing is written or stored.")
+    }
 
-        setContent {
-            MaterialTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text("PhotoGlobe M0 spike", style = MaterialTheme.typography.titleLarge)
-                        Text("Access tier: " + permState, style = MaterialTheme.typography.bodyMedium)
+    private fun buildUi(): View {
+        val pad = (16 * resources.displayMetrics.density).toInt()
 
-                        Button(
-                            onClick = { requestPermissions() },
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("1 - Request media access") }
+        val root = LinearLayout(this)
+        root.orientation = LinearLayout.VERTICAL
+        root.setPadding(pad, pad, pad, pad)
 
-                        Button(
-                            onClick = { runScan(limit = 2000) },
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("2 - Quick scan (first 2000)") }
+        val title = TextView(this)
+        title.text = "PhotoGlobe M0 spike"
+        title.textSize = 20f
+        title.setTypeface(null, Typeface.BOLD)
+        root.addView(title)
 
-                        Button(
-                            onClick = { runScan(limit = null) },
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("3 - Full library scan") }
+        tierView = TextView(this)
+        tierView.textSize = 14f
+        root.addView(tierView)
 
-                        Button(
-                            onClick = { launchPicker() },
-                            enabled = !busy,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { Text("4 - Test Photo Picker redaction") }
+        root.addView(button("1  -  Request media access") { requestPermissions() })
+        root.addView(button("2  -  Quick scan (first 2000)") { runScan(2000) })
+        root.addView(button("3  -  Full library scan") { runScan(null) })
+        root.addView(button("4  -  Test Photo Picker redaction") { launchPicker() })
 
-                        if (progress.isNotEmpty()) {
-                            HorizontalDivider()
-                            Text(progress, style = MaterialTheme.typography.bodyMedium)
-                        }
+        progressView = TextView(this)
+        progressView.textSize = 14f
+        root.addView(progressView)
 
-                        HorizontalDivider()
+        logView = TextView(this)
+        logView.typeface = Typeface.MONOSPACE
+        logView.textSize = 11f
+        logView.setTextIsSelectable(true)   // long-press to copy the results out
 
-                        Column(
-                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                        ) {
-                            log.forEach {
-                                Text(it, fontFamily = FontFamily.Monospace, fontSize = 12.sp)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        scrollView = ScrollView(this)
+        scrollView.addView(logView)
+        root.addView(
+            scrollView,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                0
+            ).apply { weight = 1f }
+        )
+
+        return root
+    }
+
+    private fun button(label: String, onClick: () -> Unit): Button {
+        val b = Button(this)
+        b.text = label
+        b.setOnClickListener { if (!busy) onClick() }
+        return b
     }
 
     // ------------------------------------------------------------- permissions
@@ -154,13 +145,14 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 34) perms += visualUserSelected
         if (Build.VERSION.SDK_INT >= 29) perms += Manifest.permission.ACCESS_MEDIA_LOCATION
 
+        logLine("")
         logLine("Requesting: " + perms.joinToString { it.substringAfterLast(".") })
-        logLine("  Android 14+: choose Allow all for the FULL tier, or")
-        logLine("  Select photos for the CURATED tier. Test both - see README.")
+        logLine("  Android 14+: choose 'Allow all' for the FULL tier, or")
+        logLine("  'Select photos' for the CURATED tier. Test CURATED first - see README.")
         permissionLauncher.launch(perms.toTypedArray())
     }
 
-    private fun refreshPermissionState() {
+    private fun refreshTier() {
         val full = granted(readImagesPermission())
         val partial = Build.VERSION.SDK_INT >= 34 && granted(visualUserSelected)
         val mediaLocation =
@@ -171,10 +163,13 @@ class MainActivity : ComponentActivity() {
             partial -> "CURATED (partial)"
             else -> "NONE"
         }
-        permState = tier + " - ACCESS_MEDIA_LOCATION=" + (if (mediaLocation) "granted" else "DENIED")
+        tierView.text =
+            "Access tier: " + tier + "   ACCESS_MEDIA_LOCATION: " +
+                (if (mediaLocation) "granted" else "DENIED")
     }
 
     private fun launchPicker() {
+        logLine("")
         logLine("Photo Picker: pick a photo you KNOW is geotagged.")
         pickerLauncher.launch(
             PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -186,18 +181,21 @@ class MainActivity : ComponentActivity() {
     private fun runScan(limit: Int?) {
         if (busy) return
         busy = true
-        lifecycleScope.launch {
+        // Plain background thread - the scan must not run on the UI thread.
+        Thread {
             try {
                 scanLibrary(limit)
             } catch (t: Throwable) {
                 logLine("SCAN FAILED: " + t.javaClass.simpleName + ": " + t.message)
             }
-            progress = ""
-            busy = false
-        }
+            runOnUiThread {
+                progressView.text = ""
+                busy = false
+            }
+        }.start()
     }
 
-    private suspend fun scanLibrary(limit: Int?) = withContext(Dispatchers.IO) {
+    private fun scanLibrary(limit: Int?) {
         val collection =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                 MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
@@ -227,14 +225,14 @@ class MainActivity : ComponentActivity() {
         if (totalInLibrary == 0) {
             logLine("Nothing returned. Either permission was denied, or the Curated")
             logLine("grant covers no photos. Check the access tier at the top.")
-            return@withContext
+            return
         }
 
         probeLocationColumns(collection)
 
         val work = if (limit != null && limit < ids.size) ids.subList(0, limit) else ids
 
-        // Step 2: read EXIF per photo. Expensive - this is the number we actually need.
+        // Step 2: read EXIF per photo. Expensive - this is the number we need.
         var geotagged = 0
         var noGps = 0
         var errors = 0
@@ -242,8 +240,8 @@ class MainActivity : ComponentActivity() {
         val samples = ArrayList<String>()
 
         val readStart = System.nanoTime()
-        work.forEachIndexed { i, id ->
-            val base = ContentUris.withAppendedId(collection, id)
+        for (i in work.indices) {
+            val base = ContentUris.withAppendedId(collection, work[i])
             val uri =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
                     MediaStore.setRequireOriginal(base)
@@ -276,11 +274,12 @@ class MainActivity : ComponentActivity() {
                 val elapsedSec = (System.nanoTime() - readStart) / 1e9
                 val rate = (i + 1) / elapsedSec
                 val remaining = (work.size - i - 1) / rate
-                progress = String.format(
+                val line = String.format(
                     Locale.US,
-                    "%d / %d - %.0f photos/sec - ~%.0fs left - %d geotagged",
+                    "%d / %d   %.0f photos/sec   ~%.0fs left   %d geotagged",
                     i + 1, work.size, rate, remaining, geotagged
                 )
+                runOnUiThread { progressView.text = line }
             }
         }
         val readMs = (System.nanoTime() - readStart) / 1_000_000
@@ -302,11 +301,10 @@ class MainActivity : ComponentActivity() {
         )
 
         if (limit != null && totalInLibrary > work.size) {
-            val projected = perPhotoMs * totalInLibrary / 1000.0
             logLine(
                 String.format(
                     Locale.US, "PROJECTED full scan: %.1f s for %d photos",
-                    projected, totalInLibrary
+                    perPhotoMs * totalInLibrary / 1000.0, totalInLibrary
                 )
             )
         }
@@ -319,8 +317,8 @@ class MainActivity : ComponentActivity() {
             logLine("*** ZERO geotagged photos and no errors. ***")
             logLine("This is the classic ACCESS_MEDIA_LOCATION failure: the permission")
             logLine("is missing or denied, so Android strips GPS silently and every")
-            logLine("photo looks un-geotagged. Check the access tier line at the top")
-            logLine("before concluding the library has no location data.")
+            logLine("photo looks un-geotagged. Check the access tier at the top before")
+            logLine("concluding the library has no location data.")
         }
 
         logLine("")
@@ -328,12 +326,10 @@ class MainActivity : ComponentActivity() {
         logLine("            tens of seconds      => persistence is required")
     }
 
-
-    // Cheap-path probe. MediaStore carries LATITUDE/LONGITUDE columns, deprecated at API 29
-    // and redacted for non-privileged apps. A system gallery reads a column here; we have to
-    // open and parse each file. If these ever returned real values the whole scan cost would
-    // collapse to one cursor pass - almost certainly they do not, but confirm rather than
-    // assume, because the payoff would be large.
+    // Cheap-path probe (D-022). MediaStore carries latitude/longitude columns,
+    // deprecated at API 29 and redacted for non-privileged apps. A system gallery
+    // reads a column here; we have to open and parse each file. If these ever
+    // returned real values the whole scan would collapse to one cursor pass.
     private fun probeLocationColumns(collection: Uri) {
         try {
             contentResolver.query(
@@ -356,11 +352,8 @@ class MainActivity : ComponentActivity() {
                     checked++
                 }
                 logLine("MediaStore lat/lng columns: " + nonZero + " of " + checked + " non-zero")
-                if (nonZero > 0) {
-                    logLine("  *** CHEAP PATH MAY EXIST - investigate before M1 ***")
-                } else {
-                    logLine("  redacted as expected - per-file EXIF read is required")
-                }
+                if (nonZero > 0) logLine("  *** CHEAP PATH MAY EXIST - investigate before M1 ***")
+                else logLine("  redacted as expected - per-file EXIF read required")
             } ?: logLine("MediaStore lat/lng columns: query returned null")
         } catch (t: Throwable) {
             logLine("MediaStore lat/lng columns: unavailable (" + t.javaClass.simpleName + ")")
@@ -370,7 +363,7 @@ class MainActivity : ComponentActivity() {
     // ----------------------------------------------------------------- picker
 
     private fun testPickerRedaction(uri: Uri) {
-        lifecycleScope.launch(Dispatchers.IO) {
+        Thread {
             try {
                 // No setRequireOriginal here - picker URIs do not support it.
                 val stream = contentResolver.openInputStream(uri)
@@ -391,7 +384,7 @@ class MainActivity : ComponentActivity() {
             } catch (t: Throwable) {
                 logLine("Photo Picker read failed: " + t.javaClass.simpleName + ": " + t.message)
             }
-        }
+        }.start()
     }
 
     // ------------------------------------------------------------------- util
@@ -400,6 +393,10 @@ class MainActivity : ComponentActivity() {
         if (whole == 0) "0%" else String.format(Locale.US, "%.1f%%", part * 100.0 / whole)
 
     private fun logLine(line: String) {
-        runOnUiThread { log.add(line) }
+        runOnUiThread {
+            logText.append(line).append('\n')
+            logView.text = logText.toString()
+            scrollView.post { scrollView.fullScroll(View.FOCUS_DOWN) }
+        }
     }
 }

@@ -187,3 +187,43 @@ the number Q-008 needs).
 **Next session.** Run the spike on the owner's S25+, fill in the results template in
 `spike/README.md`, convert Q-001 and Q-008 into decisions, settle D-012 (map SDK), delete
 `spike/`, then start M1.
+
+---
+
+## 2026-08-08 (final) — Spike rebuilt as a real project, compiled and verified
+
+**Context.** Owner was uncomfortable running an unfamiliar app on their phone, and then
+asked how one would even run it. Both concerns were reasonable and reshaped the deliverable.
+
+**Environment discovered on this machine** (recorded so future sessions do not re-derive it):
+- Android Studio at `E:\Android Studio`, config at `%LOCALAPPDATA%\Google\AndroidStudio2025.2.2`
+- Bundled JDK (JBR) 21.0.8 at `E:\Android Studio\jbr`
+- SDK at `%LOCALAPPDATA%\Android\Sdk` — only platform **android-36**, build-tools 35/36/36.1
+- Gradle cache holds 8.14.3, AGP up to 8.11.0, Kotlin 2.1.20, coroutines 1.9.0,
+  exifinterface 1.4.1, core-ktx 1.16.0, activity 1.8.0
+- **No androidx.compose artifacts cached at all** - Compose has never been built here
+
+**Consequence: the spike was rewritten without Compose.** Plain Android Views constructed
+in Kotlin, three dependencies (core-ktx, activity-ktx, exifinterface), all already cached.
+This avoided guessing Compose BOM versions that had never been resolved on this machine,
+and halved the amount of code the owner has to read before trusting it.
+
+**Delivered as a complete Gradle project**, superseding the earlier
+create-it-yourself-and-paste-two-files approach. `gradle wrapper` was generated using the
+cached 8.14.3 distribution, and **`./gradlew assembleDebug` succeeds** - 2.5 MB debug APK.
+Owner now opens `spike/` in Android Studio and presses Run.
+
+**Verification recorded for the trust question.** The compiled APK declares exactly the four
+read permissions and **no INTERNET**, so Android blocks network access at the OS level
+regardless of code. Source audit shows no network calls, no writes, and four
+`contentResolver` calls total (two `query`, two `openInputStream`). AndroidX auto-adds
+`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`, which the app defines for itself to protect its
+own broadcast receivers - it grants no device access. README documents the grep commands so
+this is verifiable rather than asserted.
+
+**Also corrected.** Earlier claim that shipping a buildable Gradle project was impractical
+because the wrapper JAR is a binary. It was practical - the cached Gradle distribution
+generates the wrapper locally.
+
+**Next.** Unchanged: run it, or decline and fold Q-001/Q-008 into M1. Owner has not yet
+decided. Q-002 still open, affects M4 only.

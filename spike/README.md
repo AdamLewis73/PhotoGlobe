@@ -1,143 +1,130 @@
 # M0 Feasibility Spike
 
-Throwaway code. Delete this whole folder once the questions below are answered and the
-results are written into `docs/PROGRESS.md`.
+A throwaway diagnostic app. Delete this whole folder once the questions below are answered
+and the results are written into `docs/PROGRESS.md`.
+
+**This is a complete, buildable Android Studio project.** It was compiled and verified on
+this machine on 2026-08-08 — AGP 8.11.0, Kotlin 2.1.20, Gradle 8.14.3, compileSdk 36.
+Nothing needs to be created by hand.
+
+## What it does, in full
+
+- lists photo IDs from MediaStore (`contentResolver.query`)
+- opens each photo to read its EXIF header (`contentResolver.openInputStream`)
+- counts how many carry GPS coordinates, and times how long that took
+- prints the results on screen
+
+## What it does not do
+
+- **No network of any kind.** The manifest declares no `INTERNET` permission, so Android
+  blocks network access at the OS level. This is enforced by the operating system, not by
+  the code.
+- **No writing.** No files, no database, no preferences. Read-only throughout.
+- **No modifying, moving, copying or deleting** any photo.
+- **Nothing persists.** Close the app and every result is gone.
+
+### Verify that yourself
+
+```
+grep -o 'android.permission.[A-Z_]*' app/src/main/AndroidManifest.xml
+grep -nE 'INTERNET|http|Socket|\.write|delete\(|insert\(|update\(' app/src/main/java/com/photoglobe/spike/MainActivity.kt
+grep -n 'contentResolver\.' app/src/main/java/com/photoglobe/spike/MainActivity.kt
+```
+
+Four read permissions, no network calls, no writes, and exactly four `contentResolver`
+calls — two `query`, two `openInputStream`.
+
+The compiled APK reports the same four permissions, plus one AndroidX adds automatically
+(`DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`) — a permission the app defines for itself so
+other apps cannot reach its internal broadcast receivers. It grants no device access.
+
+There are three dependencies: `core-ktx`, `activity-ktx`, `exifinterface`. No Compose, no
+Material libraries, no networking library, no analytics.
 
 ## What it answers
 
 | | Question | How to read the result |
 |---|---|---|
-| **Q-001** | Can we read GPS from the photo library at all? | `geotagged` count is greater than zero under the FULL tier |
+| **Q-001** | Can we read GPS from the photo library at all? | `geotagged` is greater than zero under the FULL tier |
 | **Q-001b** | Does the Android 14+ **Curated** (partial) grant also return unredacted GPS? | Re-run under `Select photos` and see whether `geotagged` is still non-zero |
 | **Q-001c** | Does the Photo Picker redact location, as documented? | Button 4 reports `latLong = null` for a photo you know is geotagged |
-| **Q-008** | Does the MVP need a database? | Full-scan time: under ~2s means no; tens of seconds means yes |
+| **Q-008** | Does the MVP need a database? | Full-scan time: under ~2s means no, tens of seconds means yes |
+| **D-022** | Does the cheap path exist? | `MediaStore lat/lng columns` line — expect `redacted as expected` |
 
-It also produces the library size and geotagged percentage, which size everything in
-`docs/DESIGN.md` §5.
+## Running it
 
-## Why this isn't a ready-to-build Gradle project
+**One-time phone setup:**
 
-A buildable Android project needs a Gradle wrapper JAR, which is a binary, plus an AGP
-version matching whatever Android Studio you have installed. Shipping a half-working
-project tree is the fastest way to lose an hour to version mismatches. Creating the
-project locally and pasting in two files is more robust, and takes about five minutes.
+1. Settings → **About phone** → **Software information**
+2. Tap **Build number** seven times — it counts down
+3. Back out; **Developer options** now appears at the bottom of Settings
+4. Developer options → turn on **USB debugging**
 
-## Setup
+**On the PC:**
 
-1. **Android Studio → New Project → Empty Activity** (the Compose one, which is the
-   default). Name it `PhotoGlobeSpike`, package `com.photoglobe.spike`, language Kotlin,
-   minimum SDK 26 or higher.
+5. Android Studio → **Open** → select this `spike` folder (not the repo root)
+6. Wait for the Gradle sync to finish
+7. Plug the phone in with a USB cable
+8. On the phone: *"Allow USB debugging?"* → **Allow**
+9. Your device appears in the dropdown at the top right → click the green ▶ **Run**
 
-2. **Add one dependency.** In `app/build.gradle.kts`, inside `dependencies { }`:
+It installs as "PhotoGlobe Spike" in your app drawer. Uninstall it like any other app:
+long-press the icon → Uninstall.
 
-   ```kotlin
-   implementation("androidx.exifinterface:exifinterface:1.3.7")
-   ```
+No cable? Developer options → **Wireless debugging** → pair with a code. Same result.
 
-   Then click **Sync Now**. Everything else the spike uses ships with the template.
+## Test order matters
 
-3. **Replace `app/src/main/java/com/photoglobe/spike/MainActivity.kt`** with
-   `MainActivity.kt` from this folder.
-
-4. **Merge the permissions** from `AndroidManifest.xml` in this folder into
-   `app/src/main/AndroidManifest.xml`. Only the four `<uses-permission>` lines matter —
-   keep your generated `<application>` block, since it references the theme and icon the
-   template created. If you replace the file wholesale, change
-   `@style/Theme.PhotoGlobeSpike` to whatever theme name the template generated.
-
-5. **Run on a real device**, not the emulator. An emulator has no real photo library and
-   its handful of sample images will tell you nothing about scan time.
-
-## Running it — do the tiers in this order
-
-**Order matters.** Once you grant "Allow all", Android stops showing the three-option
-dialog, so you cannot test the Curated tier afterwards without resetting. Do the partial
-test first.
+Once you grant "Allow all", Android stops offering the three-option dialog, so the Curated
+tier cannot be tested afterwards without resetting. **Do the partial test first.**
 
 ### Pass 1 — Curated tier (Android 14+)
 
 1. Tap **1 · Request media access**
-2. In the dialog choose **Select photos**, and pick perhaps 20 photos you know are
-   geotagged
-3. Confirm the header reads `CURATED (partial) - ACCESS_MEDIA_LOCATION=granted`
-4. Tap **3 · Full library scan** — with partial access this only covers what you selected
-5. **Record whether `geotagged` is non-zero.** This is the answer to Q-001b, and it decides
-   whether the app can survive Play refusing broad access
+2. Choose **Select photos**, pick ~20 photos you know are geotagged
+3. Header should read `Access tier: CURATED (partial)   ACCESS_MEDIA_LOCATION: granted`
+4. Tap **3 · Full library scan** — with partial access this covers only what you selected
+5. **Record whether `geotagged` is non-zero.** This answers Q-001b and decides whether the
+   app can survive Play refusing broad access
 
 ### Pass 2 — Full tier
 
 1. **Settings → Apps → PhotoGlobe Spike → Storage → Clear data.** Without this the dialog
    will not reappear
-2. Tap **1 · Request media access**, choose **Allow all**
-3. Confirm the header reads `FULL - ACCESS_MEDIA_LOCATION=granted`
-4. Tap **2 · Quick scan (first 2000)** first — it finishes in seconds and prints a
-   projected full-scan time. If the projection is enormous, you already have your Q-008
-   answer and can skip the full run
-5. Tap **3 · Full library scan** for the real number
+2. Tap **1**, choose **Allow all**. Header should read `FULL`
+3. Tap **2 · Quick scan (first 2000)** — finishes in seconds and prints a projected
+   full-scan time. If the projection is huge you already have your Q-008 answer
+4. Tap **3 · Full library scan** for the real number
 
 ### Pass 3 — Photo Picker
 
-Tap **4 · Test Photo Picker redaction** and choose a photo you are *certain* is geotagged
-— ideally one whose coordinates appeared in the scan samples. A `null` result on a photo
-that has no GPS in the first place proves nothing.
+Tap **4** and choose a photo you are *certain* is geotagged, ideally one whose coordinates
+showed up in the scan samples. A `null` on a photo with no GPS proves nothing.
 
 ## The failure to watch for
 
-If the scan reports **zero geotagged and zero errors**, that is almost certainly not a
-library without location data. It is `ACCESS_MEDIA_LOCATION` missing or denied: Android
-strips the GPS tags silently and returns a perfectly valid photo with no coordinates. The
-spike prints a warning when it sees this pattern. Check the access tier line before
-concluding anything.
+**Zero geotagged and zero errors is almost never a library without location data.** It is
+`ACCESS_MEDIA_LOCATION` missing or denied: Android strips the GPS tags silently and hands
+back a perfectly valid photo with no coordinates. The app prints an explicit warning when
+it sees that pattern. Check the access tier line before concluding anything.
 
-## What to record in docs/PROGRESS.md
+## Recording results
 
-Copy this template and fill it in. These numbers close Q-001 and Q-008 and size the
-performance work in `docs/DESIGN.md` §5.
+The log is selectable — long-press to copy it out. Paste the numbers into
+`docs/PROGRESS.md` under an `M0 results` heading, then:
 
-```
-M0 results - <date>, <device>, Android <version> (API <n>)
-
-FULL tier
-  total photos in library:   ____
-  geotagged:                 ____  ( ___ %)
-  errors:                    ____
-  enumerate:                 ____ ms
-  full exif scan:            ____ ms   ( ____ ms/photo, ____ /sec )
-
-CURATED tier (partial grant)
-  geotagged returned?        yes / no
-  first error, if any:       ____________________
-
-PHOTO PICKER
-  latLong on a known-geotagged photo:   null / <coords>
-
-Conclusions
-  Q-001  -> D-0__ :
-  Q-008  -> D-0__ :  database needed? yes / no
-```
-
-## Then
-
-- Turn the results into decisions in `docs/DECISIONS.md` and delete Q-001 and Q-008 from
+- turn them into decisions in `docs/DECISIONS.md`, and delete Q-001 and Q-008 from
   `docs/OPEN-QUESTIONS.md`
-- Settle the map SDK (D-012), weighted by D-015
-- Delete this folder
+- settle the map SDK (D-012), weighted by D-015
+- delete this folder
 
----
+## Note on scan time (D-020)
 
-## Note on what "scan time" means (D-020)
-
-The reference implementation has no scan delay because it queries an index it built
-incrementally over the life of the device — and, being a system app, probably reads
-location straight from a MediaStore column instead of parsing EXIF per file.
+The reference implementation (Samsung Gallery) has no scan delay because it queries an
+index built incrementally over the life of the device, and — being a system app — likely
+reads location from a MediaStore column instead of parsing EXIF per file.
 
 PhotoGlobe pays that cost **once**, on first run. From run two onward, incremental sync
-touches only new photos and the app is exactly as instant. So the number this spike
-produces sizes two things and nothing else:
-
-- whether the MVP needs persistence at all (Q-008)
-- how the first-run experience has to be designed (D-021: newest-first, progressive)
-
-The spike also probes MediaStore's deprecated LATITUDE/LONGITUDE columns (D-022). If they
-return real values, the cheap path exists and the scan collapses to one cursor pass.
-Expect `redacted as expected`; record it either way.
+touches only new photos and the app is equally instant. So this number sizes exactly two
+things: whether the MVP needs persistence (Q-008), and how the first run must be designed
+(D-021: newest-first, progressive).
