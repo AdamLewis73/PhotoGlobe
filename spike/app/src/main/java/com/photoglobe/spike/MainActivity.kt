@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.view.View
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -52,7 +53,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var scrollView: ScrollView
 
     private val logText = StringBuilder()
-    private var busy = false
+    @Volatile private var busy = false
+    @Volatile private var cancelRequested = false
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -80,6 +82,12 @@ class MainActivity : ComponentActivity() {
         logLine("Read-only. No network permission. Nothing is written or stored.")
     }
 
+    override fun onDestroy() {
+        // Nothing should keep reading files once this screen is gone.
+        cancelRequested = true
+        super.onDestroy()
+    }
+
     private fun buildUi(): View {
         val pad = (16 * resources.displayMetrics.density).toInt()
 
@@ -101,6 +109,7 @@ class MainActivity : ComponentActivity() {
         root.addView(button("2  -  Quick scan (first 2000)") { runScan(2000) })
         root.addView(button("3  -  Full library scan") { runScan(null) })
         root.addView(button("4  -  Test Photo Picker redaction") { launchPicker() })
+        root.addView(stopButton())
 
         progressView = TextView(this)
         progressView.textSize = 14f
@@ -128,6 +137,21 @@ class MainActivity : ComponentActivity() {
         val b = Button(this)
         b.text = label
         b.setOnClickListener { if (!busy) onClick() }
+        return b
+    }
+
+    // The brake. Deliberately does NOT check `busy` - it must always respond.
+    private fun stopButton(): Button {
+        val b = Button(this)
+        b.text = "STOP  -  halt a running scan"
+        b.setOnClickListener {
+            if (busy) {
+                cancelRequested = true
+                logLine("Stop requested - finishing the current photo, then halting.")
+            } else {
+                logLine("Nothing is running.")
+            }
+        }
         return b
     }
 
@@ -181,6 +205,9 @@ class MainActivity : ComponentActivity() {
     private fun runScan(limit: Int?) {
         if (busy) return
         busy = true
+        cancelRequested = false
+        // Keep the screen awake so a long scan is not throttled mid-measurement.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // Plain background thread - the scan must not run on the UI thread.
         Thread {
             try {
@@ -190,6 +217,7 @@ class MainActivity : ComponentActivity() {
             }
             runOnUiThread {
                 progressView.text = ""
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 busy = false
             }
         }.start()
@@ -204,6 +232,7 @@ class MainActivity : ComponentActivity() {
 
         logLine("")
         logLine("--- scan start (" + (if (limit == null) "full library" else "first " + limit) + ") ---")
+        logLine("Stop any time with the Stop button. Closing the app also stops it.")
 
         // Step 1: enumerate. Cheap - one cursor over MediaStore, no file access.
         val ids = ArrayList<Long>()
@@ -229,6 +258,7 @@ class MainActivity : ComponentActivity() {
         }
 
         probeLocationColumns(collection)
+        if (cancelRequested) { logLine("Stopped before reading any photo."); return }
 
         val work = if (limit != null && limit < ids.size) ids.subList(0, limit) else ids
 
@@ -236,11 +266,19 @@ class MainActivity : ComponentActivity() {
         var geotagged = 0
         var noGps = 0
         var errors = 0
+        var processed = 0
+        var cancelled = false
         var firstError: String? = null
         val samples = ArrayList<String>()
 
         val readStart = System.nanoTime()
         for (i in work.indices) {
+            // Cooperative cancellation: Stop button, or the activity being destroyed.
+            if (cancelRequested) {
+                cancelled = true
+                break
+            }
+
             val base = ContentUris.withAppendedId(collection, work[i])
             val uri =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
@@ -269,26 +307,32 @@ class MainActivity : ComponentActivity() {
                 errors++
                 if (firstError == null) firstError = t.javaClass.simpleName + ": " + t.message
             }
+            processed++
 
-            if ((i + 1) % 200 == 0) {
+            if (processed % 200 == 0) {
                 val elapsedSec = (System.nanoTime() - readStart) / 1e9
-                val rate = (i + 1) / elapsedSec
-                val remaining = (work.size - i - 1) / rate
+                val rate = processed / elapsedSec
+                val remaining = (work.size - processed) / rate
                 val line = String.format(
                     Locale.US,
                     "%d / %d   %.0f photos/sec   ~%.0fs left   %d geotagged",
-                    i + 1, work.size, rate, remaining, geotagged
+                    processed, work.size, rate, remaining, geotagged
                 )
                 runOnUiThread { progressView.text = line }
             }
         }
-        val readMs = (System.nanoTime() - readStart) / 1_000_000
-        val perPhotoMs = readMs.toDouble() / work.size
-        val perSec = if (readMs > 0) work.size * 1000.0 / readMs else 0.0
 
-        logLine("--- scan complete ---")
-        logLine("scanned:      " + work.size + " of " + totalInLibrary + " in library")
-        logLine("geotagged:    " + geotagged + "  (" + pct(geotagged, work.size) + ")")
+        val readMs = (System.nanoTime() - readStart) / 1_000_000
+        if (processed == 0) {
+            logLine("--- stopped before any photo was read ---")
+            return
+        }
+        val perPhotoMs = readMs.toDouble() / processed
+        val perSec = if (readMs > 0) processed * 1000.0 / readMs else 0.0
+
+        logLine(if (cancelled) "--- scan STOPPED early ---" else "--- scan complete ---")
+        logLine("scanned:      " + processed + " of " + totalInLibrary + " in library")
+        logLine("geotagged:    " + geotagged + "  (" + pct(geotagged, processed) + ")")
         logLine("no GPS:       " + noGps)
         logLine("errors:       " + errors)
         if (firstError != null) logLine("first error:  " + firstError)
@@ -300,7 +344,7 @@ class MainActivity : ComponentActivity() {
             )
         )
 
-        if (limit != null && totalInLibrary > work.size) {
+        if (totalInLibrary > processed) {
             logLine(
                 String.format(
                     Locale.US, "PROJECTED full scan: %.1f s for %d photos",
@@ -309,7 +353,12 @@ class MainActivity : ComponentActivity() {
             )
         }
 
-        if (samples.isNotEmpty()) logLine("sample coords: " + samples.joinToString(" | "))
+        if (samples.isNotEmpty()) {
+            logLine("")
+            logLine("PRIVACY: the next line contains real coordinates from your own")
+            logLine("photos. Fine on this device. Strip it before sharing the log.")
+            logLine("sample coords: " + samples.joinToString(" | "))
+        }
 
         // The single most important diagnostic in this spike.
         if (geotagged == 0 && errors == 0) {

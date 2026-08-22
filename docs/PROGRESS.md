@@ -227,3 +227,47 @@ generates the wrapper locally.
 
 **Next.** Unchanged: run it, or decline and fold Q-001/Q-008 into M1. Owner has not yet
 decided. Q-002 still open, affects M4 only.
+
+---
+
+## 2026-08-08 — Spike security audit and hardening
+
+**Why.** Owner has only one phone and it is their daily driver. Requested a thorough
+review before installing. Full line-by-line audit performed, not a keyword grep.
+
+**Data-safety audit: clean.** Recorded so it does not need repeating:
+- 4 `contentResolver` calls total - 2 `query`, 2 `openInputStream`. All reads.
+- No write/delete/modify API anywhere. `ExifInterface.saveAttributes()` is never called
+  and could not work regardless: the instance is constructed from an `InputStream`, which
+  has no write path.
+- No reflection, no `Runtime.exec`, no native loading.
+- Merged manifest (after library contributions) declares only the four read permissions.
+  No INTERNET. No boot receivers, wake locks, foreground services or exact alarms - the
+  app does nothing at all when closed.
+- Components: MainActivity plus two stock AndroidX ones (InitializationProvider,
+  ProfileInstallReceiver).
+- Full dependency tree is AndroidX + Kotlin stdlib only. No networking library, no
+  analytics, no ads.
+
+**Four real defects found and fixed** - none destructive, all missed on first write:
+1. Rotation destroyed and recreated the Activity mid-scan, leaving the worker thread
+   writing to discarded views so the log froze. Fixed with
+   `android:configChanges="orientation|screenSize|keyboardHidden"`.
+2. No way to stop a running scan. Added a STOP button with cooperative cancellation; it
+   deliberately does not check `busy` so the brake always responds.
+3. The scan kept running after leaving the app. `onDestroy` now sets `cancelRequested`.
+4. `busy` was shared across threads without `@Volatile`. Both flags are now volatile.
+
+Also added `FLAG_KEEP_SCREEN_ON` during a scan so screen-off throttling cannot corrupt the
+timing measurement, and partial-result reporting so a stopped scan still prints usable
+numbers.
+
+**Privacy note added to the app itself.** The `sample coords:` line prints real
+coordinates from the owner's photos. Harmless on-device, but it must be stripped before
+the log is shared anywhere. The app now prints that warning immediately above the line.
+
+**Rebuilt and re-audited after the changes** - `assembleDebug` succeeds, APK still 2.5 MB,
+permissions unchanged.
+
+**Next.** Unchanged: owner installs via `adb install` (device not yet connected) or
+Android Studio, then runs the three passes in `spike/README.md` - Curated tier first.
