@@ -382,12 +382,11 @@ once or twice annually. Build a hierarchy where something is always moving:
 > **World-zoom regional grouping is free** — it falls out of distance clustering, not place
 > lookup, because a US state is a few dozen pixels wide at maximum zoom-out (D-019).
 
-**The branch-out animation is the memorable part of the app.** Clusters splitting as you
-zoom is what the concept was built around. Off-the-shelf Android clustering does **not**
-animate it — markers simply pop in at new positions. Animating children outward from the
-parent cluster's position on zoom-in, and inward on zoom-out, is custom renderer work.
-Budget real time for it in M5; it is the difference between "a map with dots" and something
-that feels alive.
+**The branch-out animation is the memorable part of the app** - clusters splitting as you
+zoom is what the concept was built around. **It comes free with `DefaultClusterRenderer`**
+(D-035): markers animate outward from the nearest existing cluster on zoom in and inward on
+zoom out, on by default, duration configurable. No custom renderer work. This is the
+strongest reason the map SDK decision landed on Google Maps.
 
 Four zoom tiers, each with its own visual language:
 

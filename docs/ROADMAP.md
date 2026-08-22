@@ -87,7 +87,7 @@ Scope depends on Q-002. Phone-only owner ⇒ roughly half this milestone disappe
 - [ ] Exclusion zones — opt-in, off by default (D-010, D-017)
 - [ ] Photo thumbnails inside markers — **reintroduces the memory constraint in
       DESIGN.md §5**, so do the caching work properly here
-- [ ] Cluster branch-out animation (DESIGN.md §12 — custom renderer work, not free)
+- [x] ~~Cluster branch-out animation~~ — free with DefaultClusterRenderer (D-035), not an M5 task
 - [ ] Timeline scrub / year filter
 - [ ] Share/export card, dark map style
 

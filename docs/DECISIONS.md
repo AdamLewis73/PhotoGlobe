@@ -416,3 +416,32 @@ very close to zero, but it is risk *reduction*, not a guarantee. The only absolu
 guarantee of zero spend is having no billing account, which means MapLibre (D-030). If the
 owner treats hard rule 1 as admitting no residual risk at all, MapLibre is the correct
 choice and D-031 should be revisited.
+
+### D-035 · 2026-08-08 · active · corrects D-016 and DESIGN.md §12
+**Google's `DefaultClusterRenderer` animates cluster split/merge by default. It is not
+custom work.**
+DESIGN.md §12 and the M5 roadmap entry claimed "off-the-shelf Android clustering does NOT
+animate it - markers pop in at new positions" and budgeted custom renderer work for the
+branch-out animation. **Wrong.** `DefaultClusterRenderer` renders in three stages - add
+markers, animate to final position, remove old markers - animating markers outward from
+the nearest existing cluster on zoom in, and existing clusters inward to the nearest new
+cluster on zoom out. Controlled by `setAnimation(boolean)` and on by default, with
+animation duration configurable.
+
+**Why this matters beyond removing an M5 task.** D-013 identified the split/merge behaviour
+as the memorable core of the product. On Google Maps it is free. On MapLibre it is not:
+GeoJSON clustering recomputes clusters per zoom level and markers jump to new positions
+with no tweening, so the animation would have to be built by hand there.
+
+This is now the strongest technical argument for D-031 (Google Maps), and it is a better
+argument than the ergonomics reasoning D-031 was actually decided on. Surfaced by the owner
+noticing the MapLibre demo "lurching" on zoom - that lurch is precisely the un-animated
+cluster recomputation.
+
+**Correction history for this area, since it has now moved three times:** D-015 said
+MapLibre would need hand-written clustering (wrong, corrected by D-030); D-030 concluded
+the difference was only ergonomics (incomplete - it missed animation); D-035 identifies the
+actual functional gap. Verify claims about renderer behaviour against the library source
+before recording them.
+
+Source: https://github.com/googlemaps/android-maps-utils/blob/main/library/src/main/java/com/google/maps/android/clustering/view/DefaultClusterRenderer.java
