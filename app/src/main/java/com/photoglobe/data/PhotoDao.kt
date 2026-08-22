@@ -46,6 +46,10 @@ interface PhotoDao {
         limit: Int = 5000
     ): List<PhotoEntity>
 
+
+    @Query("SELECT * FROM photos WHERE id IN (:ids) ORDER BY dateTakenUtc DESC")
+    suspend fun byIds(ids: List<Long>): List<PhotoEntity>
+
     @Query("SELECT mediaStoreId FROM photos")
     suspend fun knownMediaStoreIds(): List<Long>
 

@@ -406,3 +406,32 @@ incremental sync (D-006), empty and permission-denied states.
 
 **Repo hygiene verified before commit:** no image files tracked, no coordinate-shaped
 strings in any tracked file, test photos remain outside the repo entirely.
+
+---
+
+## 2026-08-08 — Tap-through grid built (branch `m1/tap-through-grid`)
+
+**First change under the new branch + PR workflow (D-038).** The workflow change itself
+went out as PR #1; this is PR #2.
+
+**Built and verified on the emulator**, again against the 22-photo fixture:
+- Tapped the `9` cluster over Texas
+- Bottom sheet opened reading **"9 photos"** - matching the badge exactly - with a thumbnail
+  grid and the map still visible behind it
+- Tapped a thumbnail, full-screen viewer opened
+
+**How cluster tap-through actually works.** MapLibre clusters do not carry their members;
+the source stores only an aggregate plus a `cluster_id`. `GeoJsonSource.getClusterLeaves()`
+expands that back into individual features, whose `id` property maps to Room rows. That is
+the mechanism behind `PhotoMap.photoIdsAt()`.
+
+**Changed:** `PhotoDao.byIds`, `PhotoMap.photoIdsAt`, `MapViewModel.selection` /
+`selectPhotos` / `clearSelection`, new `map/PhotoSheet.kt` (bottom sheet + full-screen
+viewer), `MapScreen` rewritten to register a map click listener via `rememberUpdatedState`
+so the callback stays current without re-registering.
+
+**Two questions opened rather than papered over.** Q-012: the 500-leaf cap is arbitrary and
+tapping an 8,000-photo world-zoom bubble would produce an unusable grid. Q-013: the
+full-screen dialog leaves a strip of grid visible at the bottom.
+
+**Still in M1:** incremental sync (D-006), empty and permission-denied states.

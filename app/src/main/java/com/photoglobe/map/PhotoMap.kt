@@ -112,6 +112,37 @@ object PhotoMap {
         )
     }
 
+
+    /**
+     * What sits under a tap: the photo ids of a cluster's members, or of a single point.
+     *
+     * Clusters do not carry their members - MapLibre stores only the aggregate and a
+     * `cluster_id`. `getClusterLeaves` expands that back into the individual features, which
+     * is how tapping a bubble can show the photos inside it (D-016).
+     *
+     * Returns an empty list when the tap misses everything, so the caller can dismiss.
+     */
+    fun photoIdsAt(map: MapLibreMap, screenPoint: android.graphics.PointF): List<Long> {
+        val style = map.style ?: return emptyList()
+        val source = style.getSourceAs<GeoJsonSource>(SOURCE_ID) ?: return emptyList()
+
+        // Clusters first - they sit on top and are the larger target.
+        map.queryRenderedFeatures(screenPoint, LAYER_CLUSTERS).firstOrNull()?.let { cluster ->
+            // A generous cap: past a few hundred the grid is unusable anyway and the
+            // bottom sheet should be paging instead (see Q-012).
+            val leaves = source.getClusterLeaves(cluster, MAX_LEAVES, 0)
+            return leaves.features().orEmpty().mapNotNull { it.getNumberProperty("id")?.toLong() }
+        }
+
+        map.queryRenderedFeatures(screenPoint, LAYER_SINGLE).firstOrNull()?.let { single ->
+            return listOfNotNull(single.getNumberProperty("id")?.toLong())
+        }
+
+        return emptyList()
+    }
+
+    private const val MAX_LEAVES = 500L
+
     /** Called whenever Room emits - during the first scan this fires every batch. */
     fun update(style: Style, photos: List<PhotoEntity>) {
         val source = style.getSourceAs<GeoJsonSource>(SOURCE_ID) ?: return
