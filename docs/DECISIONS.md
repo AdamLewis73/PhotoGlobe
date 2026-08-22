@@ -321,3 +321,27 @@ a stub that reports everything as geotagged. M0 used exactly this.
 **Emulator available on this machine:** AVD `Pixel_9_Pro` (Android 16 / API 36) and
 `Medium_Phone_API_36.1`. Launch detached - starting the emulator from a shell that then
 exits kills it.
+
+### D-030 · 2026-08-08 · active · corrects D-015
+**MapLibre does have built-in clustering. The claim that choosing it means hand-writing
+the clustering layer was wrong.**
+D-015 stated that clustering with count badges is the documented default of Google's
+`android-maps-utils` and that MapLibre would require writing it from scratch. The first
+half is right; the second is not. MapLibre Native on Android supports clustering directly
+on a `GeoJsonSource` (`withCluster(true)`, `withClusterRadius`, `withClusterMaxZoom`),
+with counts rendered from the `point_count` property via a SymbolLayer - the same mechanism
+Mapbox GL has always had.
+
+**The real difference is ergonomics, not capability:**
+
+| | Google Maps | MapLibre |
+|---|---|---|
+| Clustering | `ClusterManager` - items in, clusters out | GeoJSON source option |
+| Count badges | Default renderer draws them | Style a SymbolLayer on `point_count` |
+| Cluster taps | `setOnClusterClickListener` | `queryRenderedFeatures` at the tap point |
+| Learning material | Very large | Much thinner for Android specifically |
+| Account | GCP project + billing account with a card | None |
+
+So MapLibre costs more fiddly setup and worse documentation, not weeks of reimplementation.
+D-015's conclusion (do not hand-write clustering) still stands for both options; only its
+weighting of D-012 was wrong, and that weighting should not be used to justify Google Maps.
