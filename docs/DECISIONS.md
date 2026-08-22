@@ -389,3 +389,30 @@ Consequence for the tier model (DESIGN.md §10): the Curated tier needs
 `READ_MEDIA_VISUAL_USER_SELECTED`, which is 34+. On Android 13 devices only the Full and
 Manual tiers exist. The tier logic must handle that rather than assuming Curated is always
 available.
+
+### D-034 · 2026-08-08 · active · corrects D-031
+**A budget alert does not cap spending. Google Cloud has no hard spending limit.**
+D-031 listed "set a budget alert at $0" as one of three risk controls, which overstates it.
+Budgets in GCP are **notification** mechanisms - they email after money is spent, they do
+not block it. There is no native "stop at $X" switch. One can be approximated with
+budget → Pub/Sub → Cloud Function that disables billing, but that means enabling more
+services and is disproportionate here.
+
+**The controls that actually prevent charges, strongest first:**
+
+1. **The thing we use is not billed.** Map loads on Maps SDK for Android carry no per-use
+   charge. This is the main reason the project is free, not the settings below.
+2. **Enable only Maps SDK for Android on the project.** An API that has never been enabled
+   cannot be called and therefore cannot bill. This is prevention, not detection, and it is
+   the single most effective control.
+3. **Restrict the API key twice** - *Application restriction* to the app's package name +
+   signing certificate, and *API restriction* to Maps SDK for Android alone. The second
+   matters even if step 2 is done: it means a leaked key is useless to anyone else.
+4. **Budget alert at $1**, not $0 - an early-warning email the moment anything is spent.
+   Detection only.
+
+**Honest limit:** with a restricted key and one non-billing API enabled, practical risk is
+very close to zero, but it is risk *reduction*, not a guarantee. The only absolute
+guarantee of zero spend is having no billing account, which means MapLibre (D-030). If the
+owner treats hard rule 1 as admitting no residual risk at all, MapLibre is the correct
+choice and D-031 should be revisited.
