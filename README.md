@@ -7,8 +7,8 @@ coalesce as you zoom out. Tap a cluster to see those photos.
 Samsung Gallery already has a map like this, buried four taps deep inside photo details
 where almost nobody finds it. **The product is making that the front door.**
 
-**Status:** M1 in progress. The map renders, the library scan works, and clustering with
-count badges is live. Personal project.
+**Status:** M1 in progress. The map opens on launch, the library scan works, clustering with
+count badges is live, and tapping a cluster opens the photos inside it. Personal project.
 
 ## Why it is built this way
 

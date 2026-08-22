@@ -138,3 +138,30 @@ the buried version in Samsung Gallery.
 **System app / preinstalled app** — An app shipped with the phone by the manufacturer, such
 as Samsung Gallery. These hold privileged permissions that apps installed from the Play
 Store cannot obtain. Relevant because the reference implementation is one of them.
+
+**MapLibre** — The open-source map renderer this project uses (D-036). A fork of Mapbox GL
+from before that project changed licence. It needs no account and no API key, and it has no
+look of its own — appearance comes entirely from whichever style URL you point it at.
+
+**Style URL** — A JSON document describing how a map should be drawn: colours, fonts, which
+tile source to fetch. Swapping it changes the entire look in one line. PhotoGlobe defaults
+to CARTO Positron (D-037).
+
+**GeoJSON source** — A named collection of geographic features handed to MapLibre. Setting
+`cluster = true` on one makes the renderer group nearby points automatically — this is how
+the clustering in the MVP works, with no clustering code of our own.
+
+**`point_count`** — The property MapLibre attaches to each cluster, holding how many
+features it contains. The count badge is this value rendered as text by a SymbolLayer; no
+bitmap is generated (D-039).
+
+**Cluster leaves** — The individual features inside a cluster. MapLibre stores only the
+aggregate and a `cluster_id`, so getting the members back requires
+`GeoJsonSource.getClusterLeaves()`. That call is what makes tapping a bubble able to show
+the photos in it (D-016).
+
+**KSP (Kotlin Symbol Processing)** — The annotation processor that generates Room's database
+code at build time. Its version must track the Kotlin version.
+
+**PR / pull request** — A proposed change on a branch, reviewable as a diff before it joins
+`master`. All changes to this project go through one (D-038).

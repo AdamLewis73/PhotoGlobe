@@ -128,6 +128,11 @@ Modularize only when build times actually hurt.
 
 Never copy or move the user's photos (D-008). Store references plus derived metadata.
 
+**Fields marked `[planned]` are not in the code yet.** The Room entity in
+`app/src/main/java/com/photoglobe/data/PhotoEntity.kt` implements everything below except
+those. Adding them is a migration, so they are listed here to keep the eventual shape
+visible - not because they exist.
+
 ```
 Photo
   id                  (local PK)
@@ -142,14 +147,14 @@ Photo
   locationConfirmed   (Boolean — see D-009; inferred locations start false)
   altitude            (Double?)
   geohash             (indexed, for spatial queries — see §5)
-  cellIdZoom1..4      (indexed, precomputed cluster tiers — see §5)
-  placeId             (FK -> Place, resolved offline)
+  cellIdZoom1..4      [planned] (indexed, precomputed cluster tiers — see §5)
+  placeId             [planned] (FK -> Place, resolved offline, M3)
   isHidden            (Boolean — user-excluded)
 
-Place
+Place                 [planned, M3]
   id, countryCode, countryName, admin1, cityName, lat, lng
 
-ExclusionZone
+ExclusionZone         [planned, M5]
   id, label, lat, lng, radiusMeters
 
 Trip                  (shape depends on Q-004)
@@ -175,8 +180,9 @@ Three things that will bite if skipped:
 
 > **Scope note (D-014, D-018).** The arithmetic below assumes a *unique photo thumbnail
 > inside every marker*. The MVP does not do that — it draws **exact-count badges**
-> ("3194"). Counts are unbounded, so badge bitmaps cannot be pre-cached as a fixed set;
-> cache them by number with LRU eviction instead.
+> ("3194"). On MapLibre the badge is **text drawn by a SymbolLayer** from `point_count`,
+> not a generated bitmap - so no bitmaps are created and there is nothing to cache at all
+> (D-039). The LRU-cache guidance in D-018 assumed Google Maps and no longer applies.
 >
 > They are cheap regardless, because **only visible clusters become markers**. At world
 > zoom that is perhaps 20 bubbles; at street zoom the counts are small and repeat heavily.
