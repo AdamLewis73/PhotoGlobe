@@ -435,3 +435,37 @@ tapping an 8,000-photo world-zoom bubble would produce an unusable grid. Q-013: 
 full-screen dialog leaves a strip of grid visible at the bottom.
 
 **Still in M1:** incremental sync (D-006), empty and permission-denied states.
+
+---
+
+## 2026-08-08 — Documentation audit after PRs #1 and #2 merged
+
+Owner asked for a consistency pass before continuing. Seven things were stale; one was a
+genuine correction rather than tidying.
+
+**The correction (D-039).** D-018 prescribed "cache badge bitmaps keyed by the number, evict
+on an LRU, and cap the number of markers rendered." That assumed Google Maps, where the app
+generates a `BitmapDescriptor` per marker. **MapLibre draws the count as text via a
+SymbolLayer from `point_count`** - no bitmaps are created, so there is nothing to cache. The
+conclusion (badges are cheap) gets stronger; the implementation guidance was obsolete.
+DESIGN.md section 5 and the M1 roadmap item were both corrected; the roadmap line is struck
+through rather than deleted so the reasoning stays visible.
+
+**Stale items fixed.**
+- `CLAUDE.md` said "M1 is next and nothing blocks it" and "No app code exists yet". Both
+  wrong since the scaffold landed. Rewritten, and it now names the remaining M1 work and the
+  known rough edges (Q-011, Q-012, Q-013) rather than reading as though everything is fine.
+- `CLAUDE.md` document map did not list `README.md`.
+- `ROADMAP.md` M1 was `not started` with nothing ticked, despite six of its items being done
+  and verified. Now `in progress` with accurate checkboxes.
+- `README.md` status did not mention tap-through.
+- `DESIGN.md` section 4 documented `cellIdZoom1..4`, `placeId`, `Place` and `ExclusionZone`
+  as though they existed. They do not. Now marked `[planned]` with the milestone, and a note
+  pointing at the real entity file - a schema doc that silently diverges from the code is
+  worse than no schema doc.
+- `D-012` pointed at D-031 as its resolution, but D-031 was superseded by D-036. Chain fixed.
+- `GLOSSARY.md` had **zero** entries for MapLibre despite it being the chosen SDK. Added
+  MapLibre, style URL, GeoJSON source, `point_count`, cluster leaves, KSP, and PR.
+
+**Next.** Finish M1: incremental sync (D-006), then the empty / permission-denied /
+no-geotagged-photos states.

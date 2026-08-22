@@ -85,7 +85,7 @@ Overview, hard rules, roadmap, decision log, open questions, progress log and gl
 maintained continuously so any future session can resume cold. Structure and duties are
 defined in `CLAUDE.md`. Owner requirement, established at project start.
 
-### D-012 · 2026-08-08 · resolved by D-031
+### D-012 · 2026-08-08 · resolved by D-036 (via D-031, since superseded)
 **Map SDK: Google Maps vs MapLibre — deferred until after M0.**
 Google Maps gives clustering via `maps-compose-utils` and the familiar look the design
 assumes, but requires a billing account with a card attached (map loads on the mobile SDK
@@ -525,3 +525,22 @@ for the owner to open the PR in the browser.
 
 **Worth considering:** branch protection on `master` in the repo settings would enforce this
 rather than relying on discipline. Owner's call - it is a settings change on their account.
+
+### D-039 · 2026-08-08 · active · corrects D-018 implementation guidance
+**Count badges need no bitmap cache on MapLibre. The badge is text drawn by a style layer,
+not a generated image.**
+D-018 concluded that exact counts are unbounded and therefore cannot be pre-cached, and
+prescribed "cache badge bitmaps keyed by the number, evict on an LRU, and cap the number of
+markers rendered at once." That guidance assumed Google Maps, where each marker carries a
+`BitmapDescriptor` the app generates.
+
+MapLibre does not work that way. `PhotoMap` renders the count with
+`PropertyFactory.textField(Expression.toString(Expression.get("point_count")))` on a
+`SymbolLayer` - the renderer draws it from the style's glyphs on the GPU. **No bitmaps are
+created, so there is nothing to cache and nothing to evict.**
+
+D-018's *conclusion* stands and gets stronger: badges are cheap. Its *implementation
+guidance* is obsolete under D-036 and the corresponding M1 roadmap item is removed.
+
+The wider point in DESIGN.md section 5 is unaffected: putting photo *thumbnails* inside
+markers in M5 would reintroduce per-marker bitmaps and the memory constraint with them.

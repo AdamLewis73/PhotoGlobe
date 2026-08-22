@@ -96,9 +96,14 @@ The repo is at https://github.com/AdamLewis73/PhotoGlobe
 
 ## Current state
 
-**M0 and M0.5 are done** (2026-08-08). **M1 is next and nothing blocks it.**
+**M0 and M0.5 are done. M1 is in progress and the core loop works.**
 
-M0 proved feasibility, on an emulator rather than the owner's phone (D-028):
+The app builds, runs, and has been verified end to end on an emulator against the test
+fixture: the map opens on launch, the library scan finds geotagged photos, clusters render
+with count badges, and tapping a cluster opens a photo grid that taps through to full
+screen.
+
+What M0 proved, on an emulator rather than the owner's phone (D-028):
 
 - GPS **is** readable — verified against independently established ground truth, zero
   errors (D-023)
@@ -109,21 +114,26 @@ M0 proved feasibility, on an emulator rather than the owner's phone (D-028):
 
 M0.5 settled the stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037),
 minSdk 33 / targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google
-Cloud account, no API key, no billing — hard rule 1 holds with no residual risk.
+Cloud account, no API key, no billing.
 
-No app code exists yet. `spike/` was deleted after serving its purpose.
+**Remaining in M1:** incremental sync (D-006), and the empty / permission-denied /
+no-geotagged-photos states. See `docs/ROADMAP.md`.
 
 **Test fixture:** 22 real geotagged photos at `E:\PhotoGlobe-testphotos`, outside the repo.
 See D-029 for the emulator load procedure — the `scan_volume` step is mandatory and
-non-obvious. Emulator `Pixel_9_Pro` (API 36) is configured and was used throughout M0.
+non-obvious. Emulator `Pixel_9_Pro` (API 36) is configured and has been used throughout.
 
-**Known M1 trade-off:** MapLibre has no built-in cluster split/merge animation, so markers
-will pop between zoom levels. Accepted knowingly (D-036); tweening is M5 polish.
+**Known rough edges, filed not hidden:** Q-012 (tapping a huge cluster would load 500 rows
+into an unusable grid), Q-013 (full-screen viewer does not quite cover the screen), Q-011
+(79 MB debug APK — MapLibre ships every ABI).
+
+**Repo:** https://github.com/AdamLewis73/PhotoGlobe — all changes via branch + PR (D-038).
 
 ## Document map
 
 | File | Purpose |
 |---|---|
+| `README.md` | Public front door for the GitHub repo |
 | `CLAUDE.md` | This file. Entry point, hard rules, working agreement |
 | `docs/DESIGN.md` | Technical design reference — §0 defines the MVP, read it every session |
 | `docs/DECISIONS.md` | Numbered, dated decision log with rationale |
