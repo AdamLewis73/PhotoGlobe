@@ -24,3 +24,6 @@ testphotos/
 *.heic
 *.dng
 emulator-pull/
+
+# Kotlin compiler scratch
+.kotlin/

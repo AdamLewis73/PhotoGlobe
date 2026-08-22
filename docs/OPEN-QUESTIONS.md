@@ -42,3 +42,11 @@ Good enough to settle that persistence is required; not good enough to size the 
 experience precisely. Also still unknown: the true size of the owner's library and what
 fraction is geotagged - the reference implementation's counts imply 20k-50k, but that is an
 inference, not a measurement. Re-measure when the real app runs on real hardware.
+
+### Q-011 · 2026-08-08 · non-blocking, decide before M6
+**The debug APK is 79 MB. How should native ABIs be handled?**
+MapLibre ships native libraries for every ABI, and the debug build packages all of them.
+Fine for development; not fine for a store listing. Options: `abiFilters` to arm64-v8a
+only, or ABI splits / an App Bundle so Play serves the right slice per device. An App
+Bundle is the Play default and probably makes this a non-issue, but it should be verified
+rather than assumed.

@@ -364,3 +364,45 @@ it to "nothing whatsoever leaves the device."
 **Next.** M1. Compose shell launching straight to a map, Room schema with `mediaType`,
 library scan, MapLibre GeoJSON clustering with count badges, tap-through to a photo grid.
 Testable end-to-end on the emulator against the 22-photo fixture, no phone involved.
+
+---
+
+## 2026-08-08 — M1 scaffold built and verified running
+
+**Built, and confirmed working on the emulator against the 22-photo fixture** - not merely
+compiling. Screenshot evidence: the map rendered, the scan reported **"22 of 23 photos have
+a location"** (exactly the M0 ground truth), and a **cluster badge reading 9** appeared over
+Texas. The full MVP pipeline is proven end to end: MediaStore scan → EXIF → Room → geohash
+→ GeoJSON → MapLibre clustering → count badge.
+
+**What exists now.**
+- Gradle project at repo root: AGP 8.11.0, Kotlin 2.1.20, Gradle 8.14.3, compileSdk 36,
+  minSdk 33 (D-033)
+- `data/` - `PhotoEntity` (with `mediaType` per D-032), `ScanStateEntity`, DAOs including a
+  ready-but-unused viewport query, Room database, `Geohash`, `MediaLibraryScanner`
+- `permission/MediaAccess` - the three tiers from DESIGN.md section 10
+- `map/` - `PhotoMap` (GeoJSON clustering + count badge layers), `MapScreen`, `MapViewModel`
+- `MainActivity` launching straight onto the map, no splash (D-013)
+
+**Versions were verified against Maven before use**, not guessed - a direct response to
+having been burned by version guessing earlier in the project.
+
+**Three build problems worth recording, since they will recur:**
+1. **Compose BOM 2026.08.00 requires compileSdk 37.** Only android-36 is installed and AGP
+   8.11.0 recommends at most 36. Stepped back to BOM 2026.06.01, activity-compose 1.12.4,
+   lifecycle 2.10.0.
+2. **Room 2.8.4 drags in kotlin-stdlib 2.4.0** while the project compiles with Kotlin
+   2.1.20, which makes Room's *generated* code fail to resolve `mutableListOf` and
+   `StringBuilder`. Fixed by forcing kotlin-stdlib to 2.1.20 in a `resolutionStrategy`. The
+   error message points at generated code and is thoroughly misleading about its cause.
+3. The Git Bash / adb path issue from M0 recurs: `/sdcard/...` gets rewritten to a Windows
+   path by MSYS. Use PowerShell for adb, as recorded in D-029.
+
+**New question.** Q-011: the debug APK is 79 MB because MapLibre packages native libraries
+for every ABI. Needs `abiFilters` or an App Bundle before M6.
+
+**Not yet built** (still M1 scope): tap-through to a bottom-sheet photo grid (D-016),
+incremental sync (D-006), empty and permission-denied states.
+
+**Repo hygiene verified before commit:** no image files tracked, no coordinate-shaped
+strings in any tracked file, test photos remain outside the repo entirely.
