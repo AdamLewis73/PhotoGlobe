@@ -16,3 +16,11 @@ captures/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Never commit real photos or anything derived from them
+testphotos/
+*.jpg
+*.jpeg
+*.heic
+*.dng
+emulator-pull/

@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -442,6 +443,7 @@ class MainActivity : ComponentActivity() {
         if (whole == 0) "0%" else String.format(Locale.US, "%.1f%%", part * 100.0 / whole)
 
     private fun logLine(line: String) {
+        Log.i("PGSPIKE", line)   // mirrored to logcat so results can be read off-device
         runOnUiThread {
             logText.append(line).append('\n')
             logView.text = logText.toString()

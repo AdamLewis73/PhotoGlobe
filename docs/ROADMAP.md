@@ -3,7 +3,7 @@
 Status values: `not started`, `in progress`, `done`, `blocked`.
 Update this file whenever a milestone's status changes.
 
-**Current milestone: M0 — not started.**
+**Current milestone: M0 done. Next: M0.5 (settle map SDK + videos), then M1.**
 
 Reordered 2026-08-08 around the MVP definition in D-013, then adjusted the same day after
 the owner examined the reference implementation (Samsung Gallery) directly. The MVP is M1
@@ -13,25 +13,22 @@ works.
 
 ---
 
-## M0 · Feasibility spike — `not started`
-*Code written 2026-08-08 and waiting to be run: see `spike/README.md`.*
-*Half a day to a day. Throwaway code, deleted afterwards.*
+## M0 · Feasibility spike — `done` (2026-08-08)
 
-Answers Q-001 and Q-008, informs D-012. **No PhotoGlobe code before this is done.**
+Run on an Android 16 emulator against 23 real photos copied off the owner's S25+, not on
+the phone itself (D-028). All questions answered:
 
-- [ ] Empty Android project against the current target SDK
-- [ ] Request `READ_MEDIA_IMAGES` + `ACCESS_MEDIA_LOCATION`, query MediaStore,
-      call `setRequireOriginal()`, print lat/lng for ~10 photos
-- [ ] Repeat under the Android 14+ partial grant (`READ_MEDIA_VISUAL_USER_SELECTED`)
-- [ ] Confirm the Photo Picker redacts location
-- [ ] **Time a full scan of the owner's real library** — total photos, how many geotagged,
-      seconds end to end
-- [ ] Record findings in `docs/PROGRESS.md`; convert Q-001 and Q-008 into decisions
+- [x] GPS readable under broad access — 22/25 geotagged, exact match to independently
+      established ground truth, 0 errors (D-023)
+- [x] **Curated (partial) grant returns unredacted GPS** — 3/3 on known-good photos.
+      The app does not depend on Play approving broad access (D-024)
+- [x] Photo Picker redacts location — confirmed `latLong = null` (D-025)
+- [x] No cheap path — MediaStore lat/lng columns 0 non-zero of 25 (D-026)
+- [x] Timing — 4.16 ms/photo, so **persistence is required** (D-027)
+- [x] Findings recorded in `docs/PROGRESS.md` and D-023…D-028
 
-The scan timing matters as much as the permission result. It decides whether the MVP needs
-a database at all (Q-008) and whether the performance work in DESIGN.md §5 is urgent or
-premature. Expect a large library: counts visible in the reference implementation imply
-well over 13,000 geotagged photos, plausibly 20k–50k. Measure it properly.
+`spike/` can now be deleted. Timing should be re-measured on real hardware during M1
+(Q-010), but nothing is blocked on it.
 
 ## M0.5 · Project setup — `not started`
 Small; can run alongside M0.

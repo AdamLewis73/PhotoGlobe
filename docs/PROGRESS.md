@@ -271,3 +271,55 @@ permissions unchanged.
 
 **Next.** Unchanged: owner installs via `adb install` (device not yet connected) or
 Android Studio, then runs the three passes in `spike/README.md` - Curated tier first.
+
+---
+
+## 2026-08-08 — M0 RUN AND COMPLETE (emulator)
+
+**How it was run.** Owner declined to enable USB debugging on their only phone, which on
+Samsung One UI requires disabling Auto Blocker. Reasonable, and unnecessary: 22 real photos
+were copied off the phone by ordinary file transfer and tested against an Android 16
+emulator that was already installed. The phone was never connected and nothing on it
+changed. See D-028 for what this does and does not affect.
+
+**Ground truth established first.** A pure-Python EXIF parser (no dependencies) checked the
+22 files before anything ran: all 22 carried GPS. Since 22/22 gives no way to distinguish
+"reads GPS correctly" from "claims everything has GPS", a 23rd file was created - a copy
+with its APP1/EXIF segments stripped - as a negative control. Expected answer going in:
+22 with GPS, 1 without.
+
+**Results.**
+
+| Question | Answer | Evidence |
+|---|---|---|
+| Q-001 GPS readable? | **YES** | 22/25 geotagged, 0 errors - exact ground-truth match |
+| Q-001b Curated grant? | **YES** | 3/3 on known-good photos, READ_MEDIA_IMAGES denied |
+| Q-001c Picker redacts? | **YES** | latLong null on a confirmed-geotagged photo |
+| D-022 cheap path? | **NO** | MediaStore lat/lng: 0 non-zero of 25 |
+| Q-008 need a database? | **YES** | 4.16 ms/photo, so 40k photos is ~2.8 min |
+
+Logged as D-023 through D-028. Q-001 and Q-008 removed from open questions. Q-003 (videos
+in or out) escalated to **blocking** - a schema now definitely exists. Q-010 opened for
+re-measuring timing on real hardware.
+
+**The headline.** D-024 is the one that matters. The Curated tier returns unredacted GPS,
+so PhotoGlobe does not depend on Google approving broad library access. That was the
+largest external risk in the project and it is gone. The Curated-primary strategy in
+DESIGN.md §10 stands.
+
+**Two obstacles worth remembering.**
+1. `adb push` creates MediaStore rows with `is_pending=1` owned by `com.android.shell`,
+   invisible to other apps *and* to the photo picker - which showed "No photos yet" despite
+   23 rows existing, and made the app enumerate only 2 stock images. Fixed with
+   `content call --uri content://media/external --method scan_volume --arg external_primary`.
+   Bulk-updating is_pending on the collection URI is rejected outright.
+2. Launching the emulator from a shell that then exits kills it. Launch detached.
+
+**Privacy handling.** The spike prints real coordinates as samples. Those were displayed
+during the run and are deliberately **not** recorded in any project document. All test
+photos, screenshots and the app itself were deleted from the emulator afterwards - verified
+0 image rows remaining - and the working copies removed from scratch space. The originals
+remain only in `E:\PhotoGlobe-testphotos`, outside the repo, for the owner to delete.
+
+**Next.** M0.5: settle D-012 (map SDK, weighted by D-015), answer Q-003 (videos), pick a
+minimum SDK (Q-006), register the Play developer account. Then M1. `spike/` can be deleted.

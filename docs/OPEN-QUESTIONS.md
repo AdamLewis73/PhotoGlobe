@@ -7,18 +7,6 @@ Format: **Q-nnn · raised date · blocks what** — the question, then why the a
 
 ---
 
-### Q-001 · 2026-08-07 · blocks M1, D-012
-**Can the app read GPS coordinates from photos at scale on current Android?**
-Specifically, three sub-questions, all answered by the M0 spike:
-1. Does broad `READ_MEDIA_IMAGES` + `ACCESS_MEDIA_LOCATION` + `setRequireOriginal()`
-   return real lat/lng on the current target SDK, on a real device?
-2. Does the Android 14+ partial grant (`READ_MEDIA_VISUAL_USER_SELECTED`) also return
-   unredacted GPS? This determines whether the "Curated" permission tier is viable.
-3. Confirm the Android Photo Picker redacts location, as documented.
-
-If (1) fails the product changes fundamentally. If (2) fails, the app depends entirely on
-Play approving broad access — a single point of failure outside the owner's control.
-
 ### Q-002 · 2026-08-08 · shapes the interpolation feature's priority
 **Does the owner travel with a standalone camera, or shoot everything on the phone?**
 Dedicated cameras (mirrorless/DSLR) almost never have GPS, so their photos carry a
@@ -27,7 +15,7 @@ geotagged phone photos — is transformative for camera users and near-irrelevan
 phone-only users. Phone-only means interpolation drops from headline feature to
 nice-to-have, and M3 shrinks.
 
-### Q-003 · 2026-08-08 · blocks M1 schema
+### Q-003 · 2026-08-08 · BLOCKING M1 (escalated by D-027)
 **Are videos in scope?**
 Same MediaStore mechanics and similar metadata. Cheap to include from the start; expensive
 to retrofit, because it touches the schema and every query. Needs an answer before the
@@ -57,11 +45,11 @@ Options: drop the pin, keep it as a tombstone using the cached thumbnail, or ask
 the reconciliation step of the sync job. Needs a decision before sync is written, but the
 answer is not architecturally load-bearing.
 
-### Q-008 · 2026-08-08 · shapes M1 architecture
-**Does the MVP need a local database at all, or is a live MediaStore scan fast enough?**
-If a full library scan takes ~2 seconds, the MVP can hold everything in memory and skip
-Room entirely — 40,000 rows of (id, lat, lng, date) is under 2 MB. If it takes 90 seconds,
-persistence is mandatory, because cold-start-to-map is the headline metric (D-013).
-Answered directly by the scan timing already scheduled in M0. Do not pre-build the
-persistence layer before this number exists.
 
+### Q-010 · 2026-08-08 · non-blocking, revisit during M1
+**What is the real per-photo EXIF read cost on the owner's actual phone and library?**
+D-027 measured 4.16 ms/photo across 25 photos on an emulator reading from a host SSD.
+Good enough to settle that persistence is required; not good enough to size the first-run
+experience precisely. Also still unknown: the true size of the owner's library and what
+fraction is geotagged - the reference implementation's counts imply 20k-50k, but that is an
+inference, not a measurement. Re-measure when the real app runs on real hardware.

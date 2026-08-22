@@ -202,3 +202,91 @@ The M0 spike probes MediaStore's deprecated LATITUDE/LONGITUDE columns directly.
 returned real values the entire scan cost would collapse to a single cursor pass. They
 almost certainly will not - but the payoff is large enough that a five-line check beats an
 assumption. Result goes in the M0 findings.
+
+### D-023 · 2026-08-08 · active · answers Q-001
+**The app CAN read real GPS from the photo library. Broad access works.**
+Measured on an Android 16 (API 36) emulator against 23 real photos copied from the owner's
+Galaxy S25+, plus 2 stock emulator images.
+
+With `READ_MEDIA_IMAGES` + `ACCESS_MEDIA_LOCATION` + `MediaStore.setRequireOriginal()`:
+**22 of 25 geotagged, 3 without, 0 errors.** Independently verified: a pure-Python EXIF
+parser run over the same files beforehand found 22 with GPS out of 23, and the 3 negatives
+were exactly the deliberately EXIF-stripped control plus the 2 stock images. Exact match
+against ground truth, so the app is genuinely parsing each file rather than guessing.
+
+Q-001 is closed. The product is viable.
+
+### D-024 · 2026-08-08 · active · answers Q-001b
+**The Android 14+ Curated (partial) grant DOES return unredacted GPS.**
+The most important result of M0. With `READ_MEDIA_VISUAL_USER_SELECTED` granted,
+`READ_MEDIA_IMAGES` **denied**, and `ACCESS_MEDIA_LOCATION` granted, MediaStore returned
+only the user-selected photos and their coordinates came through in full.
+
+Verified twice. First run: 3 selected, 2 geotagged - the third being the EXIF-stripped
+control, correctly detected. Second run with three photos known to carry GPS: **3 of 3,
+zero errors.**
+
+**Consequence: the Curated tier is fully functional, so the app does not depend on Google
+approving broad library access.** The tiering in DESIGN.md §10 is sound and Curated can
+remain the primary flow, as planned. This removes the single largest external risk to the
+project.
+
+### D-025 · 2026-08-08 · active · answers Q-001c
+**The Photo Picker redacts location, as documented.**
+`PickVisualMedia` on a photo confirmed to carry GPS returned `latLong = null`. The
+no-permission path cannot support the core feature. DESIGN.md §1 was correct; the picker
+remains usable only for manual import where the user places the pin themselves.
+
+### D-026 · 2026-08-08 · active · closes D-022
+**The cheap path does not exist. Per-file EXIF reads are mandatory.**
+MediaStore's deprecated `latitude`/`longitude` columns returned **0 non-zero values out of
+25 rows**. Redacted for non-privileged apps, exactly as predicted in D-020. There is no way
+to avoid opening each file. Confirms why the reference implementation is instant and we
+cannot be, on first run.
+
+### D-027 · 2026-08-08 · active · answers Q-008
+**The MVP needs persistence. A live rescan on every launch is not viable.**
+Measured EXIF read cost: **104 ms for 25 photos = 4.16 ms/photo (~240/sec)** on the
+emulator. Enumeration itself was trivial - 8 ms for the whole cursor pass - confirming the
+two-phase model in DESIGN.md §5: listing is cheap, reading files is not.
+
+Extrapolated at 4.16 ms/photo:
+
+| Library size | Full scan |
+|---|---|
+| 5,000 | ~21 s |
+| 20,000 | ~83 s |
+| 40,000 | ~166 s (~2.8 min) |
+
+Against the Q-008 threshold (under ~2 s means skip the database), this is not close. Even
+if a real device were five times faster, a 40,000-photo library would still take half a
+minute. **Room is in for M1.** Q-003 (videos in or out) therefore becomes blocking, since
+it now decides a schema that will actually exist.
+
+**Honest limits on this number.** Only 25 photos were measured, the files are large
+Samsung JPEGs (1.5-5 MB, representative), and the emulator reads from a host SSD rather
+than phone flash. The precise figure is unreliable; the *direction* is not. Re-measure on
+real hardware when D-028 is revisited, but do not delay M1 for it.
+
+This also raises the value of D-021 (newest-first progressive rendering): a first run of
+one to three minutes is entirely acceptable if the map is usable from second two, and
+unacceptable if it blocks.
+
+### D-028 · 2026-08-08 · active
+**M0 was run on an emulator, not the owner's phone. Recorded so nobody mistakes it for
+device-measured data.**
+The owner has a single personal phone and declined to enable USB debugging, which on
+Samsung One UI requires disabling Auto Blocker. That is a legitimate call and the questions
+were answered another way: real photos copied off the phone by ordinary file transfer, then
+tested against an Android 16 emulator.
+
+Everything about *permissions and platform behaviour* (D-023 to D-026) is device-independent
+and can be trusted. Only the *timing* in D-027 carries an emulator caveat.
+
+**Methodology note for future sessions.** Files placed with `adb push` land in MediaStore
+with `is_pending=1` owned by `com.android.shell`, which makes them invisible to other apps
+*and* to the system photo picker - the picker showed "No photos yet" despite 23 rows
+existing. Fix:
+`adb shell content call --uri content://media/external --method scan_volume --arg external_primary`.
+Bulk-updating `is_pending` on the collection URI is rejected; the rescan is the correct
+route. Expect to need this again in M1.
