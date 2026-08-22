@@ -31,6 +31,20 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     private val _scanning = MutableStateFlow(false)
     val scanning: StateFlow<Boolean> = _scanning.asStateFlow()
 
+
+    /** Photos behind the last tapped cluster. Empty means the sheet is closed (D-016). */
+    private val _selection = MutableStateFlow<List<PhotoEntity>>(emptyList())
+    val selection: StateFlow<List<PhotoEntity>> = _selection.asStateFlow()
+
+    fun selectPhotos(ids: List<Long>) {
+        if (ids.isEmpty()) { _selection.value = emptyList(); return }
+        viewModelScope.launch {
+            _selection.value = db.photoDao().byIds(ids)
+        }
+    }
+
+    fun clearSelection() { _selection.value = emptyList() }
+
     fun tier(): MediaTier = MediaAccess.tier(getApplication())
 
     fun refreshStatus() {

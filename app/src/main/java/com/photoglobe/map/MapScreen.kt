@@ -12,6 +12,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,13 +38,19 @@ fun MapScreen(
     photos: List<PhotoEntity>,
     status: String,
     canScan: Boolean,
+    selection: List<PhotoEntity>,
     onRequestAccess: () -> Unit,
     onScan: () -> Unit,
+    onMapTap: (List<Long>) -> Unit,
+    onDismissSheet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     var mapLibreMap by remember { mutableStateOf<MapLibreMap?>(null) }
+
+    // Keeps the click listener pointing at the current lambda without re-registering it.
+    val currentOnMapTap by rememberUpdatedState(onMapTap)
 
     val mapView = remember {
         MapLibre.getInstance(context)          // must run before MapView is constructed
@@ -59,6 +66,20 @@ fun MapScreen(
                 }
             }
         }
+    }
+
+    // Tap a cluster to see what is inside it (D-016).
+    DisposableEffect(mapLibreMap) {
+        val map = mapLibreMap
+        val listener = MapLibreMap.OnMapClickListener { latLng ->
+            val m = map ?: return@OnMapClickListener false
+            val screenPoint = m.projection.toScreenLocation(latLng)
+            val ids = PhotoMap.photoIdsAt(m, screenPoint)
+            currentOnMapTap(ids)
+            ids.isNotEmpty()          // consume the tap only when something was hit
+        }
+        map?.addOnMapClickListener(listener)
+        onDispose { map?.removeOnMapClickListener(listener) }
     }
 
     // MapView is a plain Android View and needs every lifecycle callback forwarded.
@@ -85,9 +106,7 @@ fun MapScreen(
         AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize())
 
         // Recompose pushes new photos into the source as the scan inserts batches (D-021).
-        mapLibreMap?.let { map ->
-            map.style?.let { style -> PhotoMap.update(style, photos) }
-        }
+        mapLibreMap?.style?.let { style -> PhotoMap.update(style, photos) }
 
         Card(modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth()) {
             Text(
@@ -101,5 +120,7 @@ fun MapScreen(
                 Text(if (canScan) "Scan library" else "Grant photo access")
             }
         }
+
+        PhotoGridSheet(photos = selection, onDismiss = onDismissSheet)
     }
 }

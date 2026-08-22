@@ -40,6 +40,7 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val photos by viewModel.photos.collectAsStateWithLifecycle()
                     val status by viewModel.status.collectAsStateWithLifecycle()
+                    val selection by viewModel.selection.collectAsStateWithLifecycle()
 
                     MapScreen(
                         photos = photos,
@@ -48,7 +49,10 @@ class MainActivity : ComponentActivity() {
                         onRequestAccess = {
                             permissionLauncher.launch(MediaAccess.requiredPermissions())
                         },
-                        onScan = { viewModel.scan() }
+                        onScan = { viewModel.scan() },
+                        selection = selection,
+                        onMapTap = { ids -> viewModel.selectPhotos(ids) },
+                        onDismissSheet = { viewModel.clearSelection() }
                     )
                 }
             }
