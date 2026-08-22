@@ -3,7 +3,7 @@
 Status values: `not started`, `in progress`, `done`, `blocked`.
 Update this file whenever a milestone's status changes.
 
-**Current milestone: M0 done. Next: M0.5 (settle map SDK + videos), then M1.**
+**Current milestone: M0.5 in progress. Only blocker to M1 is the Maps API key.**
 
 Reordered 2026-08-08 around the MVP definition in D-013, then adjusted the same day after
 the owner examined the reference implementation (Samsung Gallery) directly. The MVP is M1
@@ -30,15 +30,17 @@ the phone itself (D-028). All questions answered:
 `spike/` can now be deleted. Timing should be re-measured on real hardware during M1
 (Q-010), but nothing is blocked on it.
 
-## M0.5 · Project setup — `not started`
-Small; can run alongside M0.
+## M0.5 · Project setup — `in progress`
 
-- [ ] `git init`, `.gitignore`, initial commit of the docs
-- [ ] Settle map SDK (D-012) using M0 findings, weighted by D-015
-- [ ] Register Play developer account ($25) — starts the closed-testing clock, which is
-      calendar time and runs in parallel with development for free
-- [ ] Minimum supported Android version (Q-006)
-- [ ] Videos in or out (Q-003) — only blocking if M1 turns out to need persistence
+- [x] Map SDK settled: **Google Maps** via `maps-compose` (D-031)
+- [x] Videos: schema-ready, images only in M1 (D-032)
+- [x] minSdk 33 / targetSdk 36 (D-033)
+- [ ] **Google Cloud project + Maps SDK for Android API key** — owner action, blocks M1's
+      map screen. Must apply all three risk controls in D-031: key restricted to package +
+      signing cert, only Maps SDK for Android enabled, $0 budget alert
+- [ ] `git init` — done
+- [ ] Register Play developer account ($25) — optional, not blocking. Starts the
+      closed-testing clock, which is calendar time and runs in parallel for free
 
 ## M1 · The MVP — `not started`
 **This is the product.** A map opening on the whole library, numbered clusters that divide
@@ -47,7 +49,7 @@ genuinely useful on its own.
 
 - [ ] Compose app shell that launches **straight to the map** — no splash, no menu
 - [ ] Library scan reading id + lat/lng + date for every geotagged photo
-- [ ] Persistence *only if Q-008 says it is needed*
+- [ ] Room persistence — required (D-027); schema includes mediaType from day one (D-032)
 - [ ] Clustering with exact-count badges via the map SDK's built-in clusterer
       (D-014, D-015, D-018)
 - [ ] Badge bitmap cache keyed by number, LRU-evicted, with a cap on rendered markers (D-018)

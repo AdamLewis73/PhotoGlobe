@@ -85,7 +85,7 @@ Overview, hard rules, roadmap, decision log, open questions, progress log and gl
 maintained continuously so any future session can resume cold. Structure and duties are
 defined in `CLAUDE.md`. Owner requirement, established at project start.
 
-### D-012 · 2026-08-08 · deferred
+### D-012 · 2026-08-08 · resolved by D-031
 **Map SDK: Google Maps vs MapLibre — deferred until after M0.**
 Google Maps gives clustering via `maps-compose-utils` and the familiar look the design
 assumes, but requires a billing account with a card attached (map loads on the mobile SDK
@@ -345,3 +345,47 @@ Mapbox GL has always had.
 So MapLibre costs more fiddly setup and worse documentation, not weeks of reimplementation.
 D-015's conclusion (do not hand-write clustering) still stands for both options; only its
 weighting of D-012 was wrong, and that weighting should not be used to justify Google Maps.
+
+### D-031 · 2026-08-08 · active · resolves D-012
+**Map SDK: Google Maps, via `maps-compose` + `maps-compose-utils`.**
+Chosen on ergonomics and documentation density, not capability - D-030 removed the false
+claim that MapLibre would need hand-written clustering. `ClusterManager` supplies
+clustering, count badges and cluster tap handling as its default behaviour, and the volume
+of worked examples matters disproportionately on the owner's first Android project.
+
+**Accepted cost:** a Google Cloud project with a billing account and a card attached. Map
+loads on the mobile SDK are not billed, so this is free in practice, but the card is
+required to obtain a key at all - a real if small concession against hard rule 1.
+
+**Mandatory risk controls, all three, before any key is used:**
+1. Restrict the API key to the app's package name **and** signing certificate fingerprint
+2. Enable **only** Maps SDK for Android on the project. Geocoding, Places, Directions and
+   Static Maps stay disabled so they cannot be called by accident
+3. Set a budget alert at $0
+
+Place search must never use the Places API (it bills per request); use the bundled GeoNames
+data from D-007 instead.
+
+**Note:** the M0 spike used plain Android Views because no Compose artifacts were cached
+locally. That was incidental to the spike and does **not** overturn D-001 - M1 uses Compose.
+
+### D-032 · 2026-08-08 · active · answers Q-003
+**Videos: schema-ready now, feature later. M1 scans images only.**
+The `Photo` table gains a `mediaType` column in the first schema so video support can be
+switched on later without a migration. M1 ignores videos entirely (hard rule 8).
+
+**Why this is not free later:** video location is not EXIF. MP4 stores it in a metadata
+atom read through `MediaMetadataRetriever.METADATA_KEY_LOCATION`, returned as an ISO-6709
+string that must be parsed. It is a second extraction path, not a wider query - so treat it
+as a real feature when it arrives, not a checkbox.
+
+### D-033 · 2026-08-08 · active · answers Q-006
+**minSdk 33 (Android 13), targetSdk 36 (Android 16).**
+`READ_MEDIA_IMAGES` only exists from 33, so this deletes the entire legacy
+`READ_EXTERNAL_STORAGE` branch - less code and fewer permission states to test. Device
+coverage is irrelevant here because downloads are explicitly not a goal (D-004).
+
+Consequence for the tier model (DESIGN.md §10): the Curated tier needs
+`READ_MEDIA_VISUAL_USER_SELECTED`, which is 34+. On Android 13 devices only the Full and
+Manual tiers exist. The tier logic must handle that rather than assuming Curated is always
+available.

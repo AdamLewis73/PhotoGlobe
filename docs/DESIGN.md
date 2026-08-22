@@ -111,9 +111,10 @@ blocking on completion.
 | Concern | Choice | Notes |
 |---|---|---|
 | Language / UI | Kotlin + Jetpack Compose | D-001 |
-| Map | **Undecided** — Google Maps vs MapLibre | D-012, resolve after M0 |
-| Clustering | maps-compose-utils, or hand-written if MapLibre | Follows from the map decision |
-| Local DB | Room | Single source of truth for the map |
+| SDK levels | minSdk 33, targetSdk 36 | D-033 |
+| Map | **Google Maps** via `maps-compose` | D-031 |
+| Clustering | `maps-compose-utils` `Clustering` | D-015, D-031 |
+| Local DB | Room | Required, not optional — D-027 |
 | Background work | WorkManager | Scan + periodic sync |
 | Image loading | Coil 3 | With a hard-capped memory cache |
 | DI | Hilt, or manual | Solo project — don't over-engineer |
@@ -130,6 +131,7 @@ Never copy or move the user's photos (D-008). Store references plus derived meta
 Photo
   id                  (local PK)
   mediaStoreId        (Long, MediaStore._ID)
+  mediaType           (IMAGE | VIDEO — column exists from day one, only IMAGE used in M1, D-032)
   contentUri          (String)
   contentSignature    (size + dateTaken + displayName — survives ID churn, enables dedup)
   dateTakenUtc        (Long)

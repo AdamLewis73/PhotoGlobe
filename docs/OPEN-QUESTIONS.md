@@ -15,12 +15,6 @@ geotagged phone photos — is transformative for camera users and near-irrelevan
 phone-only users. Phone-only means interpolation drops from headline feature to
 nice-to-have, and M3 shrinks.
 
-### Q-003 · 2026-08-08 · BLOCKING M1 (escalated by D-027)
-**Are videos in scope?**
-Same MediaStore mechanics and similar metadata. Cheap to include from the start; expensive
-to retrofit, because it touches the schema and every query. Needs an answer before the
-first migration is written.
-
 ### Q-004 · 2026-08-08 · shapes M4
 **How are trips presented?**
 Auto-detection by time+space gaps is agreed in principle; the presentation is not designed.
@@ -33,11 +27,6 @@ stored entity or a derived view recomputed on demand.
 General shape agreed (see `docs/DESIGN.md` §11) but not specified. Deliberately deferred
 until real data exists to look at — designing stats against an imaginary library produces
 metrics nobody wants.
-
-### Q-006 · 2026-08-08 · shapes M2
-**Minimum supported Android version.**
-Affects how much legacy permission handling is needed. Higher minimum = less branching,
-fewer devices. Should be decided against what the owner and testers actually carry.
 
 ### Q-007 · 2026-08-08 · non-blocking
 **What happens to a photo deleted from the device after being mapped?**
