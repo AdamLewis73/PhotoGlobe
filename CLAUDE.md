@@ -81,15 +81,24 @@ Do this as work happens, not in a batch at the end.
 
 ## Current state
 
-Planning only — no project scaffold, no build files, no code.
+**M0 is done** (2026-08-08). Feasibility is proven, on an emulator rather than the owner's
+phone (D-028). Headline findings:
 
-The next concrete action is the **M0 feasibility spike** (`docs/ROADMAP.md`), which answers
-three things at once: whether the app can read GPS from photos at all (Q-001), how long a
-scan of the owner's real library takes, and therefore whether the MVP needs a database at
-all (Q-008). It also informs the still-open map SDK choice (D-012). Nothing should be built
-before it.
+- GPS **is** readable from the library — verified against independently established ground
+  truth, zero errors (D-023)
+- The Android 14+ **Curated (partial) grant returns unredacted GPS**, so the app does not
+  depend on Play approving broad library access (D-024). Largest external risk, closed
+- No shortcut exists — per-file EXIF reads are mandatory (D-026)
+- ~4.16 ms/photo, so **Room is required** for M1 (D-027)
 
-**Not yet a git repository.** Should be initialized before code lands.
+No app code exists yet. `spike/` was deleted after serving its purpose.
+
+**Test fixture:** 22 real geotagged photos at `E:\PhotoGlobe-testphotos`, outside the repo.
+See D-029 for the emulator load procedure — the `scan_volume` step is mandatory and
+non-obvious.
+
+**Next: M0.5** — settle the map SDK (D-012), videos in or out (Q-003), minimum SDK (Q-006),
+and optionally register the Play developer account. Then M1.
 
 ## Document map
 
