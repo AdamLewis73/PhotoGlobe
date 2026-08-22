@@ -290,3 +290,34 @@ existing. Fix:
 `adb shell content call --uri content://media/external --method scan_volume --arg external_primary`.
 Bulk-updating `is_pending` on the collection URI is rejected; the rescan is the correct
 route. Expect to need this again in M1.
+
+### D-029 · 2026-08-08 · active
+**A test photo fixture is retained at `E:\PhotoGlobe-testphotos` (outside the repo).**
+22 real geotagged photos from the owner's S25+, kept deliberately for testing M1 against
+an emulator without touching the phone. Owner's call. Not in git and never to be committed
+- `.gitignore` blocks `testphotos/` and image extensions defensively.
+
+**Verified properties** (established independently in M0): all 22 carry GPS. They are large
+Samsung JPEGs, 1.5-5 MB, spanning several months and multiple locations - representative of
+the real library rather than synthetic.
+
+**To load them into an emulator:**
+
+```
+adb push <folder>/. /sdcard/DCIM/Camera/
+adb shell content call --uri content://media/external --method scan_volume --arg external_primary
+```
+
+The second line is **not optional**. Files placed by `adb push` land in MediaStore with
+`is_pending=1` owned by `com.android.shell`, which makes them invisible to other apps and
+to the system photo picker. Without the rescan an app sees nothing and the picker reports
+"No photos yet". Bulk-updating `is_pending` on the collection URI is rejected; the rescan is
+the correct route.
+
+**Useful additions when testing detection logic:** a copy with its EXIF stripped makes a
+negative control, without which a fully-geotagged set cannot distinguish real parsing from
+a stub that reports everything as geotagged. M0 used exactly this.
+
+**Emulator available on this machine:** AVD `Pixel_9_Pro` (Android 16 / API 36) and
+`Medium_Phone_API_36.1`. Launch detached - starting the emulator from a shell that then
+exits kills it.
