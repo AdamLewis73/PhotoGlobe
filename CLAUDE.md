@@ -54,7 +54,8 @@ These are settled. Do not relitigate them without the owner explicitly reopening
 9. **Measure before optimizing.** Several design sections assume a 40,000-photo library
    that has never actually been counted. M0 produces the real numbers; do not build against
    the imagined ones.
-10. **Keep the docs current.** See below. A decision made and not logged is a decision that
+10. **Branch and PR, always.** Never commit directly to `master`. See Git workflow below (D-038).
+11. **Keep the docs current.** See below. A decision made and not logged is a decision that
     will be re-argued in three sessions' time.
 
 ## Documentation duties
@@ -72,6 +73,20 @@ This project is deliberately context-heavy so future sessions can resume cold.
   Android and to mapping; unexplained jargon is a defect.
 
 Do this as work happens, not in a batch at the end.
+
+## Git workflow
+
+**Never commit directly to `master`.** Every change goes on a branch and merges through a
+pull request (D-038).
+
+1. Branch first: `git checkout -b m1/tap-through-grid`
+   Naming is `<milestone-or-type>/<short-kebab-description>` — `m1/`, `m2/`, `docs/`, `fix/`.
+2. Commit there, then `git push -u origin <branch>`
+3. Open a PR. The GitHub CLI is not installed, so hand the owner a compare URL:
+   `https://github.com/AdamLewis73/PhotoGlobe/compare/master...BRANCH?expand=1`
+4. **The owner merges.** Never merge a PR unless explicitly asked to.
+
+The repo is at https://github.com/AdamLewis73/PhotoGlobe
 
 ## Communication notes
 

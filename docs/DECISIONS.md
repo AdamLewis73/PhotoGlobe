@@ -498,3 +498,30 @@ one URL, so this is not a commitment.
    says everything lives on the device; that remains true of all *photo* data, and §9
    already names tiles as the sole unavoidable network dependency. Do not overstate the
    privacy claim to "nothing whatsoever leaves the device."
+
+### D-038 · 2026-08-08 · active
+**All changes go on a branch and merge through a pull request. No direct commits to `master`.**
+Owner's requirement, effective immediately - this decision was itself delivered on a branch
+rather than committed straight to `master`.
+
+**Branch naming:** milestone or type prefix, then a short kebab-case description.
+`m1/tap-through-grid`, `m2/incremental-sync`, `docs/pr-workflow`, `fix/scan-crash`.
+
+**Who merges:** the owner. An agent may create the branch, push it and open the PR, but
+merging is a decision, not a mechanical step, and stays with the person who has to live
+with the code.
+
+**Why it matters here specifically.** This project's value is largely in its written
+reasoning - `DECISIONS.md`, `PROGRESS.md`, and the corrections kept alongside the entries
+they overturned. A PR gives each change a reviewable diff and a place for that reasoning to
+sit before it lands, rather than after. It also makes the "I got this wrong" commits (D-030,
+D-034, D-035) legible as discrete events instead of a stream on one branch.
+
+**Tooling gap:** the GitHub CLI is not installed on this machine, so an agent cannot open a
+PR directly. Until `gh` is installed and authenticated, the flow is: agent pushes the
+branch, then hands over a compare URL of the form
+`https://github.com/AdamLewis73/PhotoGlobe/compare/master...BRANCH?expand=1`
+for the owner to open the PR in the browser.
+
+**Worth considering:** branch protection on `master` in the repo settings would enforce this
+rather than relying on discipline. Owner's call - it is a settings change on their account.
