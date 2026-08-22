@@ -112,13 +112,14 @@ blocking on completion.
 |---|---|---|
 | Language / UI | Kotlin + Jetpack Compose | D-001 |
 | SDK levels | minSdk 33, targetSdk 36 | D-033 |
-| Map | **Google Maps** via `maps-compose` | D-031 |
-| Clustering | `maps-compose-utils` `Clustering` | D-015, D-031 |
+| Map | **MapLibre Native** (Android) | D-036 — no account, no API key |
+| Clustering | GeoJSON source `cluster = true` + 2 style layers | D-030, D-036 |
 | Local DB | Room | Required, not optional — D-027 |
 | Background work | WorkManager | Scan + periodic sync |
 | Image loading | Coil 3 | With a hard-capped memory cache |
 | DI | Hilt, or manual | Solo project — don't over-engineer |
 | Reverse geocoding | Bundled offline datasets | D-007, §6 |
+| Tile style | CARTO Positron (key-free) | D-037 — one URL, trivially swapped |
 
 Start as a **single module** with feature packages (`map/`, `library/`, `stats/`, `data/`).
 Modularize only when build times actually hurt.
@@ -383,10 +384,14 @@ once or twice annually. Build a hierarchy where something is always moving:
 > lookup, because a US state is a few dozen pixels wide at maximum zoom-out (D-019).
 
 **The branch-out animation is the memorable part of the app** - clusters splitting as you
-zoom is what the concept was built around. **It comes free with `DefaultClusterRenderer`**
-(D-035): markers animate outward from the nearest existing cluster on zoom in and inward on
-zoom out, on by default, duration configurable. No custom renderer work. This is the
-strongest reason the map SDK decision landed on Google Maps.
+zoom is what the concept was built around. On Google Maps it is free
+(`DefaultClusterRenderer`, D-035). **On MapLibre it is not**: GeoJSON clustering recomputes
+per zoom level and markers jump with no tweening. That trade was accepted knowingly in
+D-036.
+
+**M1 ships with the pop.** Hand-built tweening is M5 polish, not MVP scope (hard rule 8).
+If it later proves impractical and the pop is judged unacceptable in use, that is an
+explicit revisit trigger for the map SDK (D-036).
 
 Four zoom tiers, each with its own visual language:
 

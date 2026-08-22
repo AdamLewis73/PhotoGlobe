@@ -323,3 +323,44 @@ remain only in `E:\PhotoGlobe-testphotos`, outside the repo, for the owner to de
 
 **Next.** M0.5: settle D-012 (map SDK, weighted by D-015), answer Q-003 (videos), pick a
 minimum SDK (Q-006), register the Play developer account. Then M1. `spike/` can be deleted.
+
+---
+
+## 2026-08-08 — M0.5 complete: MapLibre chosen, M1 unblocked
+
+**Decisions.** D-031 (Google Maps) **superseded by D-036 (MapLibre)** after the owner tried
+a live clustering demo. Also D-032 videos schema-ready, D-033 minSdk 33, D-037 CARTO
+Positron as the default key-free tile style.
+
+**Three corrections were needed along the way, all in the same area.** Worth reading
+together, because the pattern is that claims about renderer behaviour were recorded without
+being verified:
+- **D-030** corrected D-015: MapLibre does have built-in GeoJSON clustering; it does not
+  need hand-writing.
+- **D-034** corrected D-031: a GCP budget alert notifies, it does not cap. Google Cloud has
+  no hard spending limit, so "risk controls" were prevention (only enabling a non-billing
+  API, restricting the key twice) plus detection - not a guarantee.
+- **D-035** corrected D-016 and DESIGN 12: Google's `DefaultClusterRenderer` **does** animate
+  cluster split/merge by default. The claim that it was custom renderer work was wrong, and
+  that removed an M5 task on the Google path while identifying the real functional gap on
+  the MapLibre path.
+
+D-035 was surfaced by the owner noticing the demo "lurched" on zoom. That lurch is exactly
+the un-animated cluster recomputation.
+
+**Owner's choice and its reasoning.** MapLibre, for style customization and because it
+satisfies hard rule 1 absolutely rather than nearly. Accepted cost: markers pop between zoom
+levels in M1; hand-built tweening is M5 polish.
+
+**A claim that was corrected in the owner's favour.** D-012 and later messages called a map
+SDK switch "expensive." With Room as the source of truth and scan/geohash/cluster-tier work
+all SDK-independent, a swap touches only the map composable. That is what makes "MapLibre
+for now" defensible rather than optimistic, and it is recorded in D-036.
+
+**Privacy claim tightened.** D-037 notes that tile hosts are third-party servers and see the
+viewport. True of Google Maps equally. Photo data never leaves the device; do not overstate
+it to "nothing whatsoever leaves the device."
+
+**Next.** M1. Compose shell launching straight to a map, Room schema with `mediaType`,
+library scan, MapLibre GeoJSON clustering with count badges, tap-through to a photo grid.
+Testable end-to-end on the emulator against the 22-photo fixture, no phone involved.

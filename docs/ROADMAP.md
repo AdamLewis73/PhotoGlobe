@@ -3,7 +3,7 @@
 Status values: `not started`, `in progress`, `done`, `blocked`.
 Update this file whenever a milestone's status changes.
 
-**Current milestone: M0.5 in progress. Only blocker to M1 is the Maps API key.**
+**Current milestone: M1. Nothing is blocking it.**
 
 Reordered 2026-08-08 around the MVP definition in D-013, then adjusted the same day after
 the owner examined the reference implementation (Samsung Gallery) directly. The MVP is M1
@@ -30,17 +30,18 @@ the phone itself (D-028). All questions answered:
 `spike/` can now be deleted. Timing should be re-measured on real hardware during M1
 (Q-010), but nothing is blocked on it.
 
-## M0.5 · Project setup — `in progress`
+## M0.5 · Project setup — `done` (2026-08-08)
 
-- [x] Map SDK settled: **Google Maps** via `maps-compose` (D-031)
+- [x] Map SDK: **MapLibre** (D-036) — supersedes the earlier Google Maps choice
+- [x] Tile style: CARTO Positron, key-free (D-037)
 - [x] Videos: schema-ready, images only in M1 (D-032)
 - [x] minSdk 33 / targetSdk 36 (D-033)
-- [ ] **Google Cloud project + Maps SDK for Android API key** — owner action, blocks M1's
-      map screen. Must apply all three risk controls in D-031: key restricted to package +
-      signing cert, only Maps SDK for Android enabled, $0 budget alert
-- [ ] `git init` — done
+- [x] `git init`
+- [x] ~~Google Cloud project + Maps API key~~ — **no longer needed at all** (D-036)
 - [ ] Register Play developer account ($25) — optional, not blocking. Starts the
       closed-testing clock, which is calendar time and runs in parallel for free
+
+**Nothing blocks M1.**
 
 ## M1 · The MVP — `not started`
 **This is the product.** A map opening on the whole library, numbered clusters that divide
@@ -50,8 +51,8 @@ genuinely useful on its own.
 - [ ] Compose app shell that launches **straight to the map** — no splash, no menu
 - [ ] Library scan reading id + lat/lng + date for every geotagged photo
 - [ ] Room persistence — required (D-027); schema includes mediaType from day one (D-032)
-- [ ] Clustering with exact-count badges via the map SDK's built-in clusterer
-      (D-014, D-015, D-018)
+- [ ] Clustering with exact-count badges via MapLibre GeoJSON `cluster = true`
+      plus circle + symbol layers on `point_count` (D-014, D-018, D-036)
 - [ ] Badge bitmap cache keyed by number, LRU-evicted, with a cap on rendered markers (D-018)
 - [ ] Tap a cluster → bottom-sheet thumbnail grid → tap a thumbnail → full screen (D-016)
 - [ ] Permission flow covering the Full and Curated tiers (DESIGN.md §10)
@@ -87,7 +88,8 @@ Scope depends on Q-002. Phone-only owner ⇒ roughly half this milestone disappe
 - [ ] Exclusion zones — opt-in, off by default (D-010, D-017)
 - [ ] Photo thumbnails inside markers — **reintroduces the memory constraint in
       DESIGN.md §5**, so do the caching work properly here
-- [x] ~~Cluster branch-out animation~~ — free with DefaultClusterRenderer (D-035), not an M5 task
+- [ ] Cluster split/merge animation — hand-built on MapLibre (D-035, D-036). M1 ships
+      with markers popping between zoom levels; this is the polish pass
 - [ ] Timeline scrub / year filter
 - [ ] Share/export card, dark map style
 

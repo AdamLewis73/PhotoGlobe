@@ -346,7 +346,7 @@ So MapLibre costs more fiddly setup and worse documentation, not weeks of reimpl
 D-015's conclusion (do not hand-write clustering) still stands for both options; only its
 weighting of D-012 was wrong, and that weighting should not be used to justify Google Maps.
 
-### D-031 · 2026-08-08 · active · resolves D-012
+### D-031 · 2026-08-08 · superseded by D-036
 **Map SDK: Google Maps, via `maps-compose` + `maps-compose-utils`.**
 Chosen on ergonomics and documentation density, not capability - D-030 removed the false
 claim that MapLibre would need hand-written clustering. `ClusterManager` supplies
@@ -445,3 +445,56 @@ actual functional gap. Verify claims about renderer behaviour against the librar
 before recording them.
 
 Source: https://github.com/googlemaps/android-maps-utils/blob/main/library/src/main/java/com/google/maps/android/clustering/view/DefaultClusterRenderer.java
+
+### D-036 · 2026-08-08 · active · supersedes D-031
+**Map SDK: MapLibre. No Google Cloud account, no billing account, no API key.**
+Owner's call after seeing both. Reasons, in their weighting:
+
+1. **Style customization.** MapLibre renders any style URL - OpenFreeMap Liberty/Bright,
+   CARTO Positron/Dark Matter/Voyager, or self-hosted - and switching is a one-line change.
+   Google Maps offers one look plus limited styling.
+2. **Hard rule 1 is satisfied absolutely.** No billing account means zero residual risk,
+   not merely small risk (D-034). Given the rule was written to veto designs rather than
+   trade against them, this is the reading that matches its intent.
+3. Dark mode arrives free with a style swap rather than configuration.
+
+**What is knowingly given up (D-035):** `DefaultClusterRenderer`'s split/merge animation.
+MapLibre recomputes GeoJSON clusters per zoom level and markers jump with no tweening -
+the "lurch" the owner observed in the demo. **M1 ships with that pop**; hand-built tweening
+returns to M5 as polish. This is a real loss on the app's signature motion and was accepted
+with eyes open.
+
+**Revisit triggers - what would justify moving to Google Maps:**
+- Hand-built cluster animation in MapLibre proves impractical *and* the pop is judged
+  unacceptable in use
+- The chosen tile provider changes terms, imposes limits, or becomes unreliable
+- Some future feature genuinely requires a Google-only capability (unlikely; Places and
+  Geocoding are already ruled out by D-003 and D-007)
+
+**Migration cost, corrected.** D-012 called switching map SDKs "expensive," and earlier
+sessions repeated that. With the architecture as designed it is not: Room is the source of
+truth (D-027), the scan, geohash indexing and cluster-tier precomputation are all SDK-
+independent, and only the map screen itself talks to the SDK. A swap is confined to one
+composable plus its marker styling and tap handling. That is what makes "MapLibre for now"
+a sound position rather than an optimistic one.
+
+**Unblocks M1 immediately** - the Maps API key was the last item gating it, and it no
+longer exists.
+
+### D-037 · 2026-08-08 · active
+**Default tile style: CARTO Positron. Key-free, and chosen because the pins are the content.**
+A pale, low-contrast basemap makes coloured cluster badges read clearly, which matters more
+here than street detail. Alternatives already verified working and key-free: OpenFreeMap
+Liberty and Bright (full street maps), CARTO Dark Matter (dark), CARTO Voyager. Changing is
+one URL, so this is not a commitment.
+
+**Two things to be honest about, both of which apply to Google Maps equally:**
+
+1. **Tile hosts are third-party servers.** Free public tile endpoints are someone else's
+   infrastructure, offered at their discretion. Fine at personal-app scale; if it ever
+   became a problem the fallbacks are MapTiler's free tier or self-hosted Protomaps.
+2. **The tile host sees which part of the map is being viewed.** Not photo locations, not
+   EXIF, not the library - but the viewport is a request to an external server. Hard rule 2
+   says everything lives on the device; that remains true of all *photo* data, and §9
+   already names tiles as the sole unavoidable network dependency. Do not overstate the
+   privacy claim to "nothing whatsoever leaves the device."
