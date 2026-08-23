@@ -120,6 +120,11 @@ object PhotoMap {
      * `cluster_id`. `getClusterLeaves` expands that back into the individual features, which
      * is how tapping a bubble can show the photos inside it (D-016).
      *
+     * **Every photo in the cluster is returned, however many that is** (D-043). A cluster of
+     * 8,000 returns 8,000 - someone tapping their Japan bubble wants Japan, not the first
+     * few hundred of it. The leaf count comes from the cluster's own `point_count` rather
+     * than an arbitrary ceiling.
+     *
      * Returns an empty list when the tap misses everything, so the caller can dismiss.
      */
     fun photoIdsAt(map: MapLibreMap, screenPoint: android.graphics.PointF): List<Long> {
@@ -128,9 +133,9 @@ object PhotoMap {
 
         // Clusters first - they sit on top and are the larger target.
         map.queryRenderedFeatures(screenPoint, LAYER_CLUSTERS).firstOrNull()?.let { cluster ->
-            // A generous cap: past a few hundred the grid is unusable anyway and the
-            // bottom sheet should be paging instead (see Q-012).
-            val leaves = source.getClusterLeaves(cluster, MAX_LEAVES, 0)
+            val count = cluster.getNumberProperty("point_count")?.toLong() ?: 0L
+            if (count <= 0L) return emptyList()
+            val leaves = source.getClusterLeaves(cluster, count, 0)
             return leaves.features().orEmpty().mapNotNull { it.getNumberProperty("id")?.toLong() }
         }
 
@@ -140,8 +145,6 @@ object PhotoMap {
 
         return emptyList()
     }
-
-    private const val MAX_LEAVES = 500L
 
     /** Called whenever Room emits - during the first scan this fires every batch. */
     fun update(style: Style, photos: List<PhotoEntity>) {

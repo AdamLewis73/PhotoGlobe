@@ -597,6 +597,53 @@ not documentation.
 Applies to conversation and to prose across the docs. The one exception is inside
 `DECISIONS.md` itself, where the reader is already in the log and cross-references are cheap.
 
+### D-043 · 2026-08-08 · active · answers Q-012, and corrects its premise
+**Tapping a cluster shows every photo in it. No cap, no paging, no threshold.**
+Owner: *"Tapping a cluster should show all pictures in that cluster in the pop-up preview.
+The user can then look through them. If there's 500 photos, so be it; that's what the user
+wants to look through."*
+
+**Q-012 asked the wrong question.** It framed "tapping a bubble covering 8,000 photos would
+load 500 rows into a grid nobody can use" as a problem needing paging or a size threshold. A
+scrollable grid of every photo from a place **is the feature**. Someone tapping their Japan
+cluster wants Japan, not the first 500 of Japan. The 500-leaf cap in `PhotoMap.photoIdsAt`
+was an invented limit solving an invented problem, and it is removed.
+
+**Two implementation consequences, which are real even though the product question is settled:**
+
+1. **The database query must be chunked.** SQLite limits how many host parameters a single
+   statement can bind, so `WHERE id IN (:ids)` with several thousand ids can fail outright
+   depending on the SQLite build. The query is issued in chunks and the results re-sorted.
+   This is a hard platform limit, not a design preference.
+2. **The grid itself is fine.** `LazyVerticalGrid` only composes and decodes the tiles
+   actually on screen, so thousands of items cost little more than dozens. This is the same
+   distinction drawn in `DESIGN.md` section 5 - it is *marker* bitmaps that are expensive,
+   never a lazy scrolling list.
+
+`getClusterLeaves` is now asked for exactly `point_count` leaves rather than an arbitrary
+ceiling.
+
+### D-044 · 2026-08-08 · active
+**An empty map is the correct empty state. No placeholder screen.**
+Owner: *"empty map is fine. It doesn't see pictures so you shouldn't show anything."*
+
+If there is nothing to show, show nothing. The permission-denied case is already handled by
+the action button reading "Grant photo access" rather than "Scan library", which is enough.
+
+A gentle hint along the lines of "add pictures to have them show up on the map" is a
+reasonable future addition and sits in M5 as polish - explicitly **not** an M1 requirement,
+and not a blocking screen in any case.
+
+### D-045 · 2026-08-08 · deferred
+**Measuring cold-start-to-map is deferred out of M1.**
+Owner: *"I think it might be too early to answer this question now."* Correct - the app is
+still gaining features that will change the number, and measuring it now would produce a
+figure that is obsolete within a milestone.
+
+The principle it came from stands: the product's premise is being faster to reach than the
+map buried four taps deep in Samsung Gallery, so at some point the claim has to be measured
+rather than asserted. Revisit when M1 is otherwise complete and the shape of startup is
+settled.
 ### D-046 · 2026-08-08 · active
 **Never generate bulk data or run mass file operations without asking first.**
 Owner's instruction after an agent began creating 800 duplicate photo files on the emulator
@@ -618,3 +665,21 @@ reported it had not run. 66 files had already been written. It asserted rather t
 checking, having verified everything else all day. **After an interrupted or rejected
 operation, check what actually happened on disk before reporting anything.** An interruption
 is not a guarantee of no side effects.
+
+### D-047 · 2026-08-08 · active · refines D-038
+**Only one pull request open at a time. Finish and merge before opening the next.**
+Owner's instruction: *"only give me one PR to approve at a time. I don't like having to come
+back and get it fixed every time I merge for other open PRs."*
+
+**This is not just a preference - concurrent PRs conflict here structurally.** Every change
+appends to `docs/PROGRESS.md` and most append to `docs/DECISIONS.md`. Two branches both
+adding entries at the end of the same file always collide, so the second PR goes red the
+moment the first merges. Serializing removes the conflict entirely rather than managing it.
+
+**The flow:** branch, commit, push, open one PR, wait for the owner to merge, then start the
+next. If work is finished while a PR is still open, hold it on a local branch rather than
+pushing a second PR.
+
+**Corollary for rules like this one.** A working-agreement change discovered mid-branch goes
+*on the current branch*, not into a PR of its own - opening a second PR to record "only one
+PR at a time" would break the rule while writing it down.
