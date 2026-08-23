@@ -491,3 +491,46 @@ re-read the entries that were already there. Two were stale:
 not find *wrong* ones. Adding to a glossary is easy to remember; re-reading it against
 decisions made since is not. When a decision corrects an earlier one, grep the whole docs
 tree for the superseded claim rather than only fixing the file that prompted the correction.
+
+---
+
+## 2026-08-08 — Incremental sync built (branch `m1/incremental-sync`)
+
+**Decisions first.** D-040 answers Q-007: a photo deleted from the device is **dropped**
+from the map, no tombstones. Owner's reasoning - "if they delete all the photos from a
+location, that's on the user."
+
+D-041 records the owner's better answer to the tension that creates: rather than keeping
+ghost pins so a country survives its photos being deleted, let the user **assert a place
+visited directly**, without photos. Also covers places visited before smartphones. Scoped
+to M3, and explicitly does not weaken hard rule 4 - the user asserting a location is the
+opposite of the app inventing one.
+
+**Built.**
+- `LibrarySync` - decides full vs incremental, scans, reconciles, updates `ScanState`
+- `MediaLibraryScanner.enumerateSince()` - rows added since a `DATE_ADDED` cursor, plus the
+  new high-water mark. `allMediaStoreIds()` for reconciliation
+- `SyncWorker` - periodic 6h WorkManager job, battery-not-low, `KEEP` policy so the interval
+  does not drift with app launches
+- `MapViewModel.sync(quiet)` - `quiet` suppresses chatter for automatic runs; a sync that
+  found two photos should not narrate itself
+- `MainActivity` - syncs on resume, schedules the worker on create
+
+**Why full vs incremental keys off MediaStore's version string:** when the store is rebuilt
+the ids cannot be trusted, so everything is rescanned. Otherwise only `DATE_ADDED >` the
+stored cursor is read. `DATE_ADDED` is when MediaStore learned of the file, which is the
+right cursor for "what is new to the device"; `DATE_TAKEN` still drives display order (D-021).
+
+**Verified on the emulator, three launches:**
+
+| | Result |
+|---|---|
+| Launch 1, clean install | Full scan, 22 photos placed |
+| Launch 2, cold start | **"22 photos on the map" 4.6 s after launch, no scan** |
+| Launch 3, after deleting 5 files | **"5 removed"** |
+
+Launch 2 is the one that matters: it is D-020 made real. The first run is slow; every run
+after is a database read.
+
+**Remaining in M1:** empty / permission-denied / no-geotagged-photos states, and measuring
+cold-start-to-map honestly (D-013).
