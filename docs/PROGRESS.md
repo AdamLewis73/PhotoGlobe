@@ -469,3 +469,25 @@ through rather than deleted so the reasoning stays visible.
 
 **Next.** Finish M1: incremental sync (D-006), then the empty / permission-denied /
 no-geotagged-photos states.
+
+---
+
+## 2026-08-08 — Glossary corrections (the audit missed two)
+
+The documentation audit in PR #3 checked `CLAUDE.md`, `ROADMAP.md`, `README.md`,
+`DESIGN.md` and the decision chain, and **added** seven glossary entries - but never
+re-read the entries that were already there. Two were stale:
+
+- **Marker clustering** described clustering as the default behaviour of Google's
+  `android-maps-utils`. True, but that SDK was dropped in D-036. Now says clustering is a
+  GeoJSON source option in MapLibre, with the Google reference kept as context for D-015.
+- **Count badge** stated that "only a handful of distinct images are ever needed... generated
+  once and shared across thousands of markers." That is the original D-014 claim, which
+  **D-018 corrected** (counts are exact and unbounded) and **D-039 then made moot entirely**
+  (MapLibre draws text, not bitmaps). The glossary - the file specifically for someone new -
+  was asserting as fact a thing two decisions had overturned.
+
+**Worth noting as a process lesson:** an audit that only looks for *missing* entries will
+not find *wrong* ones. Adding to a glossary is easy to remember; re-reading it against
+decisions made since is not. When a decision corrects an earlier one, grep the whole docs
+tree for the superseded claim rather than only fixing the file that prompted the correction.

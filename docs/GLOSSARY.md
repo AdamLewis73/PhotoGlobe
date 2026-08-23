@@ -124,12 +124,17 @@ depending on what permission the user grants. See `docs/DESIGN.md` §10.
 
 **Marker clustering** — The specific technique behind the reference feature: nearby markers
 merge into one bubble labelled with how many items it contains, splitting apart as you zoom
-in and merging as you zoom out. It is the documented default behaviour of Google's
-`android-maps-utils` library, not something this project needs to invent (D-015).
+in and merging as you zoom out. **Not something this project writes** — in MapLibre it is a
+GeoJSON source option (D-030, D-036). Google's `android-maps-utils` provides it too, which
+is what D-015 originally referred to, but that SDK is no longer the one in use.
 
-**Count badge** — A cluster marker showing a number rather than a photo. Cheap, because only
-a handful of distinct images are ever needed ("1", "2", … "9", "10+", "50+", "100+"), and
-those are generated once and shared across thousands of markers. The MVP marker style (D-014).
+**Count badge** — A cluster marker showing a number rather than a photo. The MVP marker
+style (D-014). Counts are **exact and therefore unbounded** — "3194", not "100+" (D-018).
+
+Cheap for two reasons, neither of which is caching: only *visible* clusters become markers,
+and on MapLibre the number is **text drawn by a SymbolLayer** from `point_count`, so no
+image is generated at all (D-039). Earlier versions of this entry claimed a fixed set of
+badge images was generated once and shared; that was wrong twice over.
 
 **Cold-start-to-map** — Time from tapping the app icon to a usable map on screen. The
 project's headline metric (D-013), because the app's premise is being faster to reach than
