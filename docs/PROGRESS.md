@@ -534,3 +534,52 @@ after is a database read.
 
 **Remaining in M1:** empty / permission-denied / no-geotagged-photos states, and measuring
 cold-start-to-map honestly (D-013).
+
+---
+
+## 2026-08-08 — Cluster tap shows every photo (branch `m1/cluster-show-all`)
+
+**The owner corrected a premise, not just a number.** Q-012 framed "tapping a bubble
+covering 8,000 photos would load 500 rows into an unusable grid" as a problem needing paging
+or a size threshold. The owner's answer: *"Tapping a cluster should show all pictures in that
+cluster... If there's 500 photos, so be it; that's what the user wants to look through."*
+
+A scrollable grid of every photo from a place **is the feature**. Someone tapping their Japan
+cluster wants Japan, not the first 500 of Japan. The 500-leaf cap was an invented limit
+solving an invented problem. Logged as D-043 and removed; `getClusterLeaves` is now asked for
+exactly `point_count` leaves.
+
+One real constraint survives the product decision: **the database query must be chunked**,
+because SQLite limits how many host parameters a single statement can bind and
+`WHERE id IN (:ids)` with several thousand entries can fail outright. Chunked at 900 with
+results re-sorted afterwards. The grid itself needs nothing - `LazyVerticalGrid` composes
+only what is on screen.
+
+**Two more scope answers.** D-044: an empty map is the correct empty state - "it doesn't see
+pictures so you shouldn't show anything." A gentle hint sits in M5, not M1. D-045: measuring
+cold-start-to-map is deferred, since the app is still gaining features that would make any
+figure obsolete within a milestone.
+
+**Not verified against a large library.** The change is written and builds, but the fixture
+is 17 photos, so the many-thousand case is untested. An attempt to manufacture that case by
+duplicating files on the emulator was stopped by the owner and is recorded as D-046 on the
+working-agreement branch. Large photosets get tested later against the full build, on real
+data.
+
+**Addendum, same branch.** The owner merged the working-agreement PR while this branch was
+open, which put it in conflict - the third time that happened today. Recorded as D-047:
+**only one PR open at a time.** The cause is structural rather than a matter of taste: every
+change appends to `docs/PROGRESS.md` and most append to `docs/DECISIONS.md`, so two branches
+adding entries at the end of the same file always collide, and the second goes red the moment
+the first merges. Serializing removes the conflict rather than managing it.
+
+The rule was added to *this* branch deliberately - opening a second PR to record "only one PR
+at a time" would break it while writing it down.
+
+Also fixed while in the file: `CLAUDE.md` still told future sessions the GitHub CLI was not
+installed and to hand over a compare URL. It has been installed and authenticated for several
+commits. Step 3 now gives the actual `gh pr create` invocation, including that `--body-file`
+must be used rather than `--body`, which fails argument parsing on multi-line input.
+
+Decision entries were also re-sorted - D-046 had landed between D-042 and D-043 because it
+merged out of order.

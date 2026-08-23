@@ -82,9 +82,13 @@ pull request (D-038).
 1. Branch first: `git checkout -b m1/tap-through-grid`
    Naming is `<milestone-or-type>/<short-kebab-description>` — `m1/`, `m2/`, `docs/`, `fix/`.
 2. Commit there, then `git push -u origin <branch>`
-3. Open a PR. The GitHub CLI is not installed, so hand the owner a compare URL:
-   `https://github.com/AdamLewis73/PhotoGlobe/compare/master...BRANCH?expand=1`
+3. Open a PR with `gh pr create --base master --head <branch> --title ... --body-file ...`.
+   The CLI is installed at `C:\Program Files\GitHub CLI\gh.exe` and authenticated.
+   Use `--body-file`, not `--body` — a multi-line body passed inline fails argument parsing.
 4. **The owner merges.** Never merge a PR unless explicitly asked to.
+5. **One PR open at a time** (D-047). Wait for it to merge before opening the next.
+   Concurrent PRs always conflict, because every change appends to `PROGRESS.md`.
+   Work finished while a PR is open waits on a local branch.
 
 The repo is at https://github.com/AdamLewis73/PhotoGlobe
 

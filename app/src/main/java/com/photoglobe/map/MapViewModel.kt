@@ -35,9 +35,21 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     private val _selection = MutableStateFlow<List<PhotoEntity>>(emptyList())
     val selection: StateFlow<List<PhotoEntity>> = _selection.asStateFlow()
 
+    /**
+     * Loads every photo in the tapped cluster - all of them, however many (D-043).
+     *
+     * Chunked because SQLite limits how many host parameters one statement may bind, so a
+     * single `IN (:ids)` with several thousand entries can fail outright. That is a platform
+     * limit, not a design choice; results are re-sorted after reassembly since chunking
+     * loses the query's ordering.
+     */
     fun selectPhotos(ids: List<Long>) {
         if (ids.isEmpty()) { _selection.value = emptyList(); return }
-        viewModelScope.launch { _selection.value = db.photoDao().byIds(ids) }
+        viewModelScope.launch {
+            val dao = db.photoDao()
+            val loaded = ids.chunked(SQLITE_PARAM_CHUNK).flatMap { dao.byIds(it) }
+            _selection.value = loaded.sortedByDescending { it.dateTakenUtc }
+        }
     }
 
     fun clearSelection() { _selection.value = emptyList() }
@@ -99,5 +111,8 @@ class MapViewModel(app: Application) : AndroidViewModel(app) {
     private companion object {
         /** Above this many candidates a "quiet" sync still shows progress - it is no longer quick. */
         const val PROGRESS_THRESHOLD = 50
+
+        /** Comfortably under SQLite's host-parameter ceiling on every Android version. */
+        const val SQLITE_PARAM_CHUNK = 900
     }
 }

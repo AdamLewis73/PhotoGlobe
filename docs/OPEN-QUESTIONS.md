@@ -44,15 +44,6 @@ only, or ABI splits / an App Bundle so Play serves the right slice per device. A
 Bundle is the Play default and probably makes this a non-issue, but it should be verified
 rather than assumed.
 
-### Q-012 · 2026-08-08 · shapes M2
-**What should tapping a very large cluster do?**
-`PhotoMap.photoIdsAt` caps cluster expansion at 500 leaves, which is arbitrary. Tapping a
-world-zoom bubble covering 8,000 photos would currently load 500 rows and render a grid
-nobody can use. Options: page the sheet, cap and show "showing 500 of 8,000", or zoom into
-the cluster instead of opening the sheet above some size threshold. The reference
-implementation is worth checking again here. Not urgent - the fixture is 22 photos - but it
-will matter immediately on a real library.
-
 ### Q-013 · 2026-08-08 · cosmetic
 **Full-screen viewer does not cover the full screen.**
 The `Dialog` leaves a strip at the bottom where the grid shows through, and the status bar
