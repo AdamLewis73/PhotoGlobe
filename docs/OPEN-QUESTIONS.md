@@ -28,13 +28,6 @@ General shape agreed (see `docs/DESIGN.md` §11) but not specified. Deliberately
 until real data exists to look at — designing stats against an imaginary library produces
 metrics nobody wants.
 
-### Q-007 · 2026-08-08 · non-blocking
-**What happens to a photo deleted from the device after being mapped?**
-Options: drop the pin, keep it as a tombstone using the cached thumbnail, or ask. Affects
-the reconciliation step of the sync job. Needs a decision before sync is written, but the
-answer is not architecturally load-bearing.
-
-
 ### Q-010 · 2026-08-08 · non-blocking, revisit during M1
 **What is the real per-photo EXIF read cost on the owner's actual phone and library?**
 D-027 measured 4.16 ms/photo across 25 photos on an emulator reading from a host SSD.

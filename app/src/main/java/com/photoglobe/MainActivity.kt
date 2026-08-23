@@ -14,6 +14,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.photoglobe.map.MapScreen
 import com.photoglobe.map.MapViewModel
 import com.photoglobe.permission.MediaAccess
+import com.photoglobe.data.SyncWorker
 import com.photoglobe.permission.MediaTier
 
 /**
@@ -28,12 +29,13 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         viewModel.refreshStatus()
-        if (viewModel.tier() != MediaTier.NONE) viewModel.scan()
+        if (viewModel.tier() != MediaTier.NONE) viewModel.sync()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         viewModel.refreshStatus()
+        SyncWorker.schedule(this)      // idempotent; keeps the map warm (D-006)
 
         setContent {
             MaterialTheme {
@@ -49,7 +51,7 @@ class MainActivity : ComponentActivity() {
                         onRequestAccess = {
                             permissionLauncher.launch(MediaAccess.requiredPermissions())
                         },
-                        onScan = { viewModel.scan() },
+                        onScan = { viewModel.sync() },
                         selection = selection,
                         onMapTap = { ids -> viewModel.selectPhotos(ids) },
                         onDismissSheet = { viewModel.clearSelection() }
@@ -62,5 +64,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshStatus()
+        // Incremental after the first run - a few dozen rows, milliseconds (D-006, D-020).
+        viewModel.sync(quiet = true)
     }
 }

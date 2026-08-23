@@ -81,6 +81,8 @@ zones, photo thumbnails inside markers, cluster split animation. See hard rule 8
 - [ ] Bundle offline geocoding datasets, resolve photos to places (D-007)
 - [ ] Country-flag cluster icons at world zoom
 - [ ] Stats screen (Q-005 — specify against real data, not an imagined library)
+- [ ] User-asserted places — mark somewhere visited without photos (D-041). Covers
+      places visited before smartphones, and stops a photo deletion erasing a country
 
 ## M4 · Placement & trips — `not started`
 Scope depends on Q-002. Phone-only owner ⇒ roughly half this milestone disappears.

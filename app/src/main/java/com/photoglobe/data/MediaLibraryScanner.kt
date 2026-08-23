@@ -33,15 +33,53 @@ class MediaLibraryScanner(private val context: Context) {
     private val collection =
         MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
 
-    /** Ids currently visible to us. Fewer than the whole library under the Curated tier. */
-    suspend fun enumerate(): List<Long> = withContext(Dispatchers.IO) {
+    /**
+     * Ids added since [sinceDateAdded], newest first, plus the highest `DATE_ADDED` seen.
+     *
+     * Passing 0 enumerates everything. Anything higher is the incremental path (D-006): on
+     * a normal resume this returns a handful of rows and costs milliseconds.
+     *
+     * `DATE_ADDED` is seconds since the epoch, and is when MediaStore learned about the
+     * file - not when the photo was taken. That is the right cursor for "what is new to the
+     * device", which is what sync needs; `DATE_TAKEN` still drives display order (D-021).
+     *
+     * Under the Curated tier this returns only the photos the user selected, which is
+     * correct and needs no special handling.
+     */
+    suspend fun enumerateSince(sinceDateAdded: Long): Pair<List<Long>, Long> =
+        withContext(Dispatchers.IO) {
+            val ids = ArrayList<Long>()
+            var maxDateAdded = sinceDateAdded
+
+            val selection =
+                if (sinceDateAdded > 0) "${MediaStore.Images.Media.DATE_ADDED} > ?" else null
+            val args =
+                if (sinceDateAdded > 0) arrayOf(sinceDateAdded.toString()) else null
+
+            context.contentResolver.query(
+                collection,
+                arrayOf(MediaStore.Images.Media._ID, MediaStore.Images.Media.DATE_ADDED),
+                selection,
+                args,
+                "${MediaStore.Images.Media.DATE_TAKEN} DESC"     // D-021: newest first
+            )?.use { c ->
+                val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val addedCol = c.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_ADDED)
+                while (c.moveToNext()) {
+                    ids.add(c.getLong(idCol))
+                    val added = c.getLong(addedCol)
+                    if (added > maxDateAdded) maxDateAdded = added
+                }
+            }
+            ids to maxDateAdded
+        }
+
+    /** Every id MediaStore currently holds. One cursor pass, no file access - used to find
+     *  photos deleted since the last sync (D-040). */
+    suspend fun allMediaStoreIds(): List<Long> = withContext(Dispatchers.IO) {
         val ids = ArrayList<Long>()
         context.contentResolver.query(
-            collection,
-            arrayOf(MediaStore.Images.Media._ID),
-            null,
-            null,
-            "${MediaStore.Images.Media.DATE_TAKEN} DESC"     // D-021: newest first
+            collection, arrayOf(MediaStore.Images.Media._ID), null, null, null
         )?.use { c ->
             val idCol = c.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
             while (c.moveToNext()) ids.add(c.getLong(idCol))

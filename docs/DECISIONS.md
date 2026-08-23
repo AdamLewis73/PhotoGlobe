@@ -544,3 +544,39 @@ guidance* is obsolete under D-036 and the corresponding M1 roadmap item is remov
 
 The wider point in DESIGN.md section 5 is unaffected: putting photo *thumbnails* inside
 markers in M5 would reintroduce per-marker bitmaps and the memory constraint with them.
+
+### D-040 · 2026-08-08 · active · answers Q-007
+**A photo deleted from the device is dropped from the map. No tombstones.**
+Owner's call: "if they delete all the photos from a location, that's on the user."
+
+Reconciliation during sync compares MediaStore's current ids against the ids in Room and
+deletes rows that no longer exist. The pin disappears and the cluster count falls.
+
+**The tension this accepts.** PhotoGlobe is described as a record of where you have been,
+and deleting a bad photo is not a statement about your travel history - so deleting every
+photo from a place erases that place from the map, and later from the stats screen. That is
+a real cost, accepted deliberately.
+
+**What makes it the right trade anyway:** it is predictable, it matches every other photo
+app, and it cannot be accused of retaining what the user deleted - which matters given the
+privacy stance in hard rule 2. An app that keeps pins for photos you deliberately removed
+feels like hoarding.
+
+The alternative - keeping the *place* while dropping the *photo* - needs `placeId`, which
+does not exist until M3. See D-041 for the direction preferred instead.
+
+### D-041 · 2026-08-08 · active · shapes M3
+**Places visited will be assertable by the user directly, without photos.**
+Owner's idea, and a better answer to the D-040 tension than tombstones. If deleting every
+photo from a country would erase it from "countries visited", the fix is not to keep ghost
+pins - it is to let the user say "I have been to Japan" as a fact in its own right.
+
+Also covers a case photos cannot: places visited before the user owned a smartphone, or
+where they simply took no pictures.
+
+**Constraint.** This does not weaken hard rule 4. That rule forbids *inventing* a location
+silently; this is the user asserting one explicitly, which is the opposite. Such entries
+must be visually distinguishable from photo-derived places, and must never fabricate photo
+counts.
+
+Scope: M3, alongside the stats screen. Not M1 (hard rule 8).
