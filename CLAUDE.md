@@ -93,6 +93,12 @@ The repo is at https://github.com/AdamLewis73/PhotoGlobe
 - The owner has minimal experience with Android, spatial data, and rendering performance.
   Explain mechanisms rather than naming them. Concrete numbers beat adjectives.
 - Flag assumptions explicitly instead of building on them silently.
+- **Never cite a code without saying what it is.** Writing "this conflicts with D-009" or
+  "Q-012 will bite here" is useless to someone who would have to go and look it up. Say
+  "photos without GPS are ignored by default (D-009)" or "tapping a huge cluster would load
+  an unusable grid (Q-012)". The number is a reference for later, not a substitute for the
+  point. This applies to conversation *and* to prose in the docs - the decision log is the
+  one place where a bare cross-reference is fine, because the reader is already in it.
 
 ## Current state
 

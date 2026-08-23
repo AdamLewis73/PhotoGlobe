@@ -580,3 +580,19 @@ must be visually distinguishable from photo-derived places, and must never fabri
 counts.
 
 Scope: M3, alongside the stats screen. Not M1 (hard rule 8).
+### D-042 · 2026-08-08 · active
+**Always say what a decision or question code means when citing it. Never the bare code alone.**
+Owner's instruction: *"don't just say the code (i.e. Q-007, Q-012, D-013). I don't know what
+those mean off-hand and I don't want to look them up."*
+
+Write "photos without GPS are ignored by default (D-009)", not "per D-009". The code is a
+pointer for later, not a substitute for the point being made.
+
+**Why this matters more here than on most projects.** This log is deliberately large - forty
+decisions and counting - precisely so nobody has to hold it in their head. Citing bare codes
+pushes exactly that burden back onto the reader and quietly undoes the reason for writing
+any of it down. A document that can only be read by someone who has already memorised it is
+not documentation.
+
+Applies to conversation and to prose across the docs. The one exception is inside
+`DECISIONS.md` itself, where the reader is already in the log and cross-references are cheap.
