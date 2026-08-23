@@ -596,3 +596,25 @@ not documentation.
 
 Applies to conversation and to prose across the docs. The one exception is inside
 `DECISIONS.md` itself, where the reader is already in the log and cross-references are cheap.
+
+### D-046 · 2026-08-08 · active
+**Never generate bulk data or run mass file operations without asking first.**
+Owner's instruction after an agent began creating 800 duplicate photo files on the emulator
+to stress-test the cluster grid: *"Wow wow wow, don't duplicate 800 photos... Large
+photosets can be tested later with the full build. Never do stuff like that."*
+
+**Ask before any of these, every time:**
+- creating more than a handful of files, on any device including an emulator
+- anything consuming meaningful disk (hundreds of MB or more)
+- bulk copies, mass renames, or loops that touch many files
+- long-running jobs that tie up a machine
+
+An emulator is still the owner's disk, and a virtual device being disposable does not make
+it the agent's to fill. Stress-testing against realistic volumes is legitimate, but it is a
+thing to *propose*, with the cost stated, not to start.
+
+**A second failure compounded the first.** After the command was interrupted, the agent
+reported it had not run. 66 files had already been written. It asserted rather than
+checking, having verified everything else all day. **After an interrupted or rejected
+operation, check what actually happened on disk before reporting anything.** An interruption
+is not a guarantee of no side effects.
