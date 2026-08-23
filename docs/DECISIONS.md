@@ -580,3 +580,41 @@ must be visually distinguishable from photo-derived places, and must never fabri
 counts.
 
 Scope: M3, alongside the stats screen. Not M1 (hard rule 8).
+### D-042 · 2026-08-08 · active
+**Always say what a decision or question code means when citing it. Never the bare code alone.**
+Owner's instruction: *"don't just say the code (i.e. Q-007, Q-012, D-013). I don't know what
+those mean off-hand and I don't want to look them up."*
+
+Write "photos without GPS are ignored by default (D-009)", not "per D-009". The code is a
+pointer for later, not a substitute for the point being made.
+
+**Why this matters more here than on most projects.** This log is deliberately large - forty
+decisions and counting - precisely so nobody has to hold it in their head. Citing bare codes
+pushes exactly that burden back onto the reader and quietly undoes the reason for writing
+any of it down. A document that can only be read by someone who has already memorised it is
+not documentation.
+
+Applies to conversation and to prose across the docs. The one exception is inside
+`DECISIONS.md` itself, where the reader is already in the log and cross-references are cheap.
+
+### D-046 · 2026-08-08 · active
+**Never generate bulk data or run mass file operations without asking first.**
+Owner's instruction after an agent began creating 800 duplicate photo files on the emulator
+to stress-test the cluster grid: *"Wow wow wow, don't duplicate 800 photos... Large
+photosets can be tested later with the full build. Never do stuff like that."*
+
+**Ask before any of these, every time:**
+- creating more than a handful of files, on any device including an emulator
+- anything consuming meaningful disk (hundreds of MB or more)
+- bulk copies, mass renames, or loops that touch many files
+- long-running jobs that tie up a machine
+
+An emulator is still the owner's disk, and a virtual device being disposable does not make
+it the agent's to fill. Stress-testing against realistic volumes is legitimate, but it is a
+thing to *propose*, with the cost stated, not to start.
+
+**A second failure compounded the first.** After the command was interrupted, the agent
+reported it had not run. 66 files had already been written. It asserted rather than
+checking, having verified everything else all day. **After an interrupted or rejected
+operation, check what actually happened on disk before reporting anything.** An interruption
+is not a guarantee of no side effects.
