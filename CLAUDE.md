@@ -16,7 +16,9 @@ into a personal travel record — countries, cities, trips, counts.
 2. `docs/DESIGN.md` §0 — the product thesis and what the MVP is. Short; read it every time
 3. `docs/ROADMAP.md` — what milestone we're in and what's next
 4. `docs/PROGRESS.md` — the last 1–2 entries, for where the previous session left off
-5. `docs/DECISIONS.md` — before proposing anything architectural, check it isn't already decided
+5. `docs/ENVIRONMENT.md` — before touching the build or the emulator. Saves rediscovering
+   version caps, the adb path trap, and the mandatory MediaStore rescan the hard way
+6. `docs/DECISIONS.md` — before proposing anything architectural, check it isn't already decided
 
 The rest of `docs/DESIGN.md` is a deep reference. Read the section relevant to the area
 being worked on; don't read it end-to-end every session.
@@ -110,12 +112,15 @@ The repo is at https://github.com/AdamLewis73/PhotoGlobe
 
 ## Current state
 
-**M0 and M0.5 are done. M1 is in progress and the core loop works.**
+**M1 is complete. The MVP works.**
 
-The app builds, runs, and has been verified end to end on an emulator against the test
-fixture: the map opens on launch, the library scan finds geotagged photos, clusters render
-with count badges, and tapping a cluster opens a photo grid that taps through to full
-screen.
+The app opens straight onto a world map, scans the photo library for geotagged photos,
+renders them as clusters with live counts that divide and coalesce as you zoom, and tapping
+a cluster opens every photo inside it in a grid that taps through to full screen. After the
+first scan it only reads what is new, so launches are instant.
+
+Everything was verified running on an emulator against a 22-photo fixture, not merely
+compiled.
 
 What M0 proved, on an emulator rather than the owner's phone (D-028):
 
@@ -126,22 +131,28 @@ What M0 proved, on an emulator rather than the owner's phone (D-028):
 - No shortcut exists — per-file EXIF reads are mandatory (D-026)
 - ~4.16 ms/photo, so **Room is required** (D-027)
 
-M0.5 settled the stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037),
-minSdk 33 / targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google
-Cloud account, no API key, no billing.
+The stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037), minSdk 33 /
+targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google Cloud account,
+no API key, no billing.
 
-**Remaining in M1:** incremental sync (D-006), and the empty / permission-denied /
-no-geotagged-photos states. See `docs/ROADMAP.md`.
+**M3 is next** (D-048): offline geocoding and the stats screen. M2 - performance work - is
+deferred, because hard rule 9 forbids optimising against numbers nobody has measured and the
+app has only ever run against a 22-photo fixture. Running it against the real library
+(Q-010) is what would reopen M2.
+
+**Read `docs/ROADMAP.md` M3 before starting.** It is written as a kickoff brief, and its
+first step needs the owner: offline geocoding means committing map datasets to the repo, and
+nothing gets added without asking first (D-046).
 
 **Test fixture:** 22 real geotagged photos at `E:\PhotoGlobe-testphotos`, outside the repo.
 See D-029 for the emulator load procedure — the `scan_volume` step is mandatory and
 non-obvious. Emulator `Pixel_9_Pro` (API 36) is configured and has been used throughout.
 
-**Known rough edges, filed not hidden:** Q-012 (tapping a huge cluster would load 500 rows
-into an unusable grid), Q-013 (full-screen viewer does not quite cover the screen), Q-011
-(79 MB debug APK — MapLibre ships every ABI).
+**Known open items:** Q-010 (real-scale behaviour unmeasured), Q-011 (79 MB debug APK —
+MapLibre ships every ABI), Q-002 (does the owner shoot with a standalone camera, which
+decides how much M4 matters).
 
-**Repo:** https://github.com/AdamLewis73/PhotoGlobe — all changes via branch + PR (D-038).
+**Repo:** https://github.com/AdamLewis73/PhotoGlobe — one PR at a time (D-047).
 
 ## Document map
 
@@ -155,3 +166,4 @@ into an unusable grid), Q-013 (full-screen viewer does not quite cover the scree
 | `docs/PROGRESS.md` | Append-only session log |
 | `docs/OPEN-QUESTIONS.md` | Unresolved questions blocking or shaping future work |
 | `docs/GLOSSARY.md` | Domain and technical terms |
+| `docs/ENVIRONMENT.md` | Machine setup, build traps, emulator and fixture procedures |

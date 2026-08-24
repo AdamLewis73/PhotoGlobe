@@ -583,3 +583,70 @@ must be used rather than `--body`, which fails argument parsing on multi-line in
 
 Decision entries were also re-sorted - D-046 had landed between D-042 and D-043 because it
 merged out of order.
+
+---
+
+## 2026-08-08 — M1 complete
+
+**Fixed the last open defect.** Q-013: the full-screen photo viewer left a strip of the
+thumbnail grid visible at the bottom and a grey status-bar area at the top.
+`usePlatformDefaultWidth = false` alone keeps a `Dialog` inset from the screen edges;
+`decorFitsSystemWindows = false` was also needed to let it run under the system bars.
+Verified on the emulator - black edge to edge, nothing showing through. Q-013 closed.
+
+**M1 marked done.** Three checklist items were unticked but had actually been resolved:
+incremental sync landed, empty states were settled as "show nothing" (D-044), and startup
+measurement was deferred (D-045). The roadmap now reflects reality rather than lagging it -
+the third time this session that the checklist had drifted behind the code.
+
+**What the MVP does, end to end:** opens straight onto a world map, scans the library for
+geotagged photos, renders them as clusters with live counts that divide and coalesce on
+zoom, and tapping a cluster opens every photo inside it in a grid that taps through to full
+screen. After the first scan it reads only what is new, so launches are instant.
+
+Every piece was verified running on an emulator against the fixture, not merely compiled.
+
+**The honest gap, stated in the roadmap rather than buried:** the fixture is 22 photos.
+Behaviour against tens of thousands is untested, and Q-010 stays open.
+
+**Next decision is M2 versus M3, and it depends on data nobody has yet.** M2 is performance
+work - viewport-bounded queries, precomputed cluster tiers - which hard rule 9 forbids
+building against imagined numbers. M3 is offline geocoding and the stats screen, which is
+what the owner asked for in the first conversation. Running the app against the real library
+settles it: if it stays smooth, M2 is premature.
+
+Q-010 re-labelled from "non-blocking, revisit during M1" to "blocks the M2-vs-M3 decision",
+since that is now what it actually gates.
+
+**Session close-out.** The owner chose **M3 next** and asked for everything undocumented to
+be written down so a fresh session can resume cold. Logged as D-048, with M2 marked
+*deferred* rather than cancelled - running the app against the real library (Q-010) is what
+would reopen it.
+
+**Created `docs/ENVIRONMENT.md`.** Machine paths, the pinned dependency versions and *why*
+they are pinned, and the traps that have already cost time this session: Compose BOM
+2026.08.00 needing compileSdk 37 when only android-36 is installed; Room 2.8.4 pulling a
+newer Kotlin stdlib and breaking its own generated code with a misleading error; Git Bash
+rewriting `/sdcard/...` paths so adb must be driven from PowerShell; the emulator dying if
+launched from a shell that exits; and the mandatory `scan_volume` after `adb push`, without
+which the app and the system photo picker both see nothing and no error explains it. All of
+this was scattered across five progress entries and would have been rediscovered the hard
+way otherwise.
+
+**Rewrote ROADMAP M3 as a kickoff brief** rather than a bare checklist. Its first step is a
+question for the owner, not code: offline geocoding means committing map datasets to the
+repo, sizes to be measured and approved first (D-046), licences and attribution checked. Then
+the `placeId` / `Place` migration, which is real work because those are marked `[planned]`
+and the database already has rows. Only then the stats screen.
+
+**`CLAUDE.md` now routes a cold session** through DESIGN section 0, the roadmap, the last
+progress entries, and ENVIRONMENT before anyone touches the build.
+
+**Housekeeping.** Removed `E:\maplibre-demo.html`, the throwaway MapLibre comparison page
+from the map SDK decision. The 22-photo fixture at `E:\PhotoGlobe-testphotos` is intact and
+stays. The emulator was left clean earlier - no duplicates, no stray screenshots.
+
+**Still open going into M3:** Q-002 (does the owner shoot with a standalone camera - decides
+how much M4 matters, open since session one), Q-004 (how trips are presented), Q-005 (what
+is actually on the stats screen - deliberately unanswered until there is real data),
+Q-010 (real-scale behaviour, gates M2), Q-011 (79 MB debug APK, MapLibre ships every ABI).

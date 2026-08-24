@@ -76,7 +76,14 @@ fun PhotoGridSheet(
     fullScreen?.let { photo ->
         Dialog(
             onDismissRequest = { fullScreen = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            // usePlatformDefaultWidth alone leaves the dialog inset from the screen edges,
+            // and decorFitsSystemWindows keeps it clear of the status and navigation bars -
+            // which left a strip of the grid visible behind it (Q-013). A photo viewer should
+            // be the whole screen and nothing else.
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
         ) {
             Box(
                 modifier = Modifier
