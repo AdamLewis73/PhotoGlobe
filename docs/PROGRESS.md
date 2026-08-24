@@ -617,3 +617,36 @@ settles it: if it stays smooth, M2 is premature.
 
 Q-010 re-labelled from "non-blocking, revisit during M1" to "blocks the M2-vs-M3 decision",
 since that is now what it actually gates.
+
+**Session close-out.** The owner chose **M3 next** and asked for everything undocumented to
+be written down so a fresh session can resume cold. Logged as D-048, with M2 marked
+*deferred* rather than cancelled - running the app against the real library (Q-010) is what
+would reopen it.
+
+**Created `docs/ENVIRONMENT.md`.** Machine paths, the pinned dependency versions and *why*
+they are pinned, and the traps that have already cost time this session: Compose BOM
+2026.08.00 needing compileSdk 37 when only android-36 is installed; Room 2.8.4 pulling a
+newer Kotlin stdlib and breaking its own generated code with a misleading error; Git Bash
+rewriting `/sdcard/...` paths so adb must be driven from PowerShell; the emulator dying if
+launched from a shell that exits; and the mandatory `scan_volume` after `adb push`, without
+which the app and the system photo picker both see nothing and no error explains it. All of
+this was scattered across five progress entries and would have been rediscovered the hard
+way otherwise.
+
+**Rewrote ROADMAP M3 as a kickoff brief** rather than a bare checklist. Its first step is a
+question for the owner, not code: offline geocoding means committing map datasets to the
+repo, sizes to be measured and approved first (D-046), licences and attribution checked. Then
+the `placeId` / `Place` migration, which is real work because those are marked `[planned]`
+and the database already has rows. Only then the stats screen.
+
+**`CLAUDE.md` now routes a cold session** through DESIGN section 0, the roadmap, the last
+progress entries, and ENVIRONMENT before anyone touches the build.
+
+**Housekeeping.** Removed `E:\maplibre-demo.html`, the throwaway MapLibre comparison page
+from the map SDK decision. The 22-photo fixture at `E:\PhotoGlobe-testphotos` is intact and
+stays. The emulator was left clean earlier - no duplicates, no stray screenshots.
+
+**Still open going into M3:** Q-002 (does the owner shoot with a standalone camera - decides
+how much M4 matters, open since session one), Q-004 (how trips are presented), Q-005 (what
+is actually on the stats screen - deliberately unanswered until there is real data),
+Q-010 (real-scale behaviour, gates M2), Q-011 (79 MB debug APK, MapLibre ships every ABI).

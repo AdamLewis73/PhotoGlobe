@@ -3,7 +3,7 @@
 Status values: `not started`, `in progress`, `done`, `blocked`.
 Update this file whenever a milestone's status changes.
 
-**M1 is complete. Next: M2 or M3 - see the note under M2.**
+**M1 is complete. M3 is next (D-048); M2 is deferred until real-scale data exists.**
 
 Reordered 2026-08-08 around the MVP definition in D-013, then adjusted the same day after
 the owner examined the reference implementation (Samsung Gallery) directly. The MVP is M1
@@ -76,20 +76,56 @@ against a library of tens of thousands is untested and Q-010 remains open.
 Explicitly **not** in M1: geocoding, place names, stats, trips, manual placement, exclusion
 zones, photo thumbnails inside markers, cluster split animation. See hard rule 8.
 
-## M2 · Making it hold up — `not started`
+## M2 · Making it hold up — `deferred` (D-048)
+
+**Deferred, not cancelled.** This is performance work, and hard rule 9 forbids building
+it against imagined numbers - the app has only ever run against a 22-photo fixture.
+Running it against the real library (Q-010) decides whether any of this is needed.
 
 - [ ] Incremental sync on foreground + WorkManager periodic job (D-006)
 - [ ] Viewport-bounded queries + spatial index, *if the M0 numbers justify it* (DESIGN.md §5)
 - [ ] Empty state, permission-denied state, no-geotagged-photos state
 - [ ] Photo deletion reconciliation (Q-007)
 
-## M3 · Places & stats — `not started`
+## M3 · Places & stats — `next` (D-048)
 
-- [ ] Bundle offline geocoding datasets, resolve photos to places (D-007)
-- [ ] Country-flag cluster icons at world zoom
-- [ ] Stats screen (Q-005 — specify against real data, not an imagined library)
-- [ ] User-asserted places — mark somewhere visited without photos (D-041). Covers
-      places visited before smartphones, and stops a photo deletion erasing a country
+Turning coordinates into place names, and the library into a travel record. This is what
+the owner asked for in the first conversation.
+
+**Start here, in this order.**
+
+**1. Settle the dataset question — needs the owner, before any code.** Offline geocoding
+means committing data files to the repo (D-007). Approximate sizes to confirm and present:
+simplified country/admin-1 borders from Natural Earth, and GeoNames `cities1000`
+(~150k rows). Expect a few MB each. **Ask before adding them** (D-046), with real sizes
+measured rather than estimated, and check each licence and its attribution requirement.
+Consider whether they belong in the repo at all versus being downloaded on first run - the
+latter conflicts with hard rule 6 (works with no network), so probably in the repo.
+
+**2. Schema migration.** `placeId` and the `Place` table are marked `[planned]` in
+DESIGN.md section 4 and do not exist. Adding them is a real Room migration, and the
+existing database has rows in it. Note `.gitignore` currently blocks `*.jpg` and `*.jpeg`,
+which will need narrowing if any image assets are ever added.
+
+**3. Resolve places.** Country and admin-1 by point-in-polygon; city by nearest neighbour.
+Backfill existing rows, then resolve on insert during scan.
+
+**4. Then the visible work.**
+
+- [ ] Stats screen. **Specify it against real data, not an imagined library** (Q-005).
+      The shape is sketched in DESIGN.md section 11, including the trap that country count
+      saturates and stops being interesting - cities and admin-1 regions keep moving
+- [ ] User-asserted places - mark somewhere visited without photos (D-041). Covers places
+      visited before smartphones, and stops deleting photos erasing a country. Must be
+      visually distinct from photo-derived places and must never fabricate photo counts
+- [ ] Country-flag cluster icons at world zoom. Cheap once places are resolved, and the
+      strongest piece of visual identity available
+
+**Not in M3:** trips (M4, and Q-004 has not settled how they are presented), manual
+placement, interpolation.
+
+**Still unanswered and worth asking early:** Q-002 - does the owner shoot with a standalone
+camera? It decides how much of M4 matters, and has been open since the first session.
 
 ## M4 · Placement & trips — `not started`
 Scope depends on Q-002. Phone-only owner ⇒ roughly half this milestone disappears.

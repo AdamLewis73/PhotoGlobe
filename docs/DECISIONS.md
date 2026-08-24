@@ -683,3 +683,20 @@ pushing a second PR.
 **Corollary for rules like this one.** A working-agreement change discovered mid-branch goes
 *on the current branch*, not into a PR of its own - opening a second PR to record "only one
 PR at a time" would break the rule while writing it down.
+
+### D-048 · 2026-08-08 · active
+**M3 is next. M2 is deferred until there is real-scale data to justify it.**
+Owner's call at the end of the M1 session: *"I'll skip to M3 for now."*
+
+**M2** is performance work - viewport-bounded queries, precomputed cluster tiers. Hard rule
+9 forbids building it against imagined numbers, and the only library it has ever been run
+against is a 22-photo fixture. Building it now would be optimising a system nobody has
+measured.
+
+**M3** is offline geocoding and the stats screen - countries visited, photos taken - which
+is what the owner asked for in the very first conversation, and is user-visible value rather
+than invisible plumbing.
+
+**What would reopen M2:** running the app against the real library (Q-010). If it stutters
+at twenty-odd thousand photos, M2 comes first after all. Until someone has that number, M2
+stays deferred rather than cancelled.

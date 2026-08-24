@@ -16,7 +16,9 @@ into a personal travel record — countries, cities, trips, counts.
 2. `docs/DESIGN.md` §0 — the product thesis and what the MVP is. Short; read it every time
 3. `docs/ROADMAP.md` — what milestone we're in and what's next
 4. `docs/PROGRESS.md` — the last 1–2 entries, for where the previous session left off
-5. `docs/DECISIONS.md` — before proposing anything architectural, check it isn't already decided
+5. `docs/ENVIRONMENT.md` — before touching the build or the emulator. Saves rediscovering
+   version caps, the adb path trap, and the mandatory MediaStore rescan the hard way
+6. `docs/DECISIONS.md` — before proposing anything architectural, check it isn't already decided
 
 The rest of `docs/DESIGN.md` is a deep reference. Read the section relevant to the area
 being worked on; don't read it end-to-end every session.
@@ -133,11 +135,14 @@ The stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037), min
 targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google Cloud account,
 no API key, no billing.
 
-**The next decision is M2 versus M3, and it depends on data nobody has.** M2 is performance
-work - viewport-bounded queries and precomputed cluster tiers - which hard rule 9 says must
-not be built against imagined numbers. M3 is offline geocoding and the stats screen, which
-is user-visible value. **Run the app against the real library first** (Q-010); if it stays
-smooth, M2 is premature and M3 should come next.
+**M3 is next** (D-048): offline geocoding and the stats screen. M2 - performance work - is
+deferred, because hard rule 9 forbids optimising against numbers nobody has measured and the
+app has only ever run against a 22-photo fixture. Running it against the real library
+(Q-010) is what would reopen M2.
+
+**Read `docs/ROADMAP.md` M3 before starting.** It is written as a kickoff brief, and its
+first step needs the owner: offline geocoding means committing map datasets to the repo, and
+nothing gets added without asking first (D-046).
 
 **Test fixture:** 22 real geotagged photos at `E:\PhotoGlobe-testphotos`, outside the repo.
 See D-029 for the emulator load procedure — the `scan_volume` step is mandatory and
@@ -161,3 +166,4 @@ decides how much M4 matters).
 | `docs/PROGRESS.md` | Append-only session log |
 | `docs/OPEN-QUESTIONS.md` | Unresolved questions blocking or shaping future work |
 | `docs/GLOSSARY.md` | Domain and technical terms |
+| `docs/ENVIRONMENT.md` | Machine setup, build traps, emulator and fixture procedures |
