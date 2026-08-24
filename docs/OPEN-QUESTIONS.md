@@ -28,7 +28,7 @@ General shape agreed (see `docs/DESIGN.md` §11) but not specified. Deliberately
 until real data exists to look at — designing stats against an imaginary library produces
 metrics nobody wants.
 
-### Q-010 · 2026-08-08 · non-blocking, revisit during M1
+### Q-010 · 2026-08-08 · blocks the M2-vs-M3 decision
 **What is the real per-photo EXIF read cost on the owner's actual phone and library?**
 D-027 measured 4.16 ms/photo across 25 photos on an emulator reading from a host SSD.
 Good enough to settle that persistence is required; not good enough to size the first-run
@@ -44,8 +44,3 @@ only, or ABI splits / an App Bundle so Play serves the right slice per device. A
 Bundle is the Play default and probably makes this a non-issue, but it should be verified
 rather than assumed.
 
-### Q-013 · 2026-08-08 · cosmetic
-**Full-screen viewer does not cover the full screen.**
-The `Dialog` leaves a strip at the bottom where the grid shows through, and the status bar
-area stays grey. Needs `decorFitsSystemWindows = false` or an edge-to-edge treatment.
-Cosmetic only; the viewer works.

@@ -583,3 +583,37 @@ must be used rather than `--body`, which fails argument parsing on multi-line in
 
 Decision entries were also re-sorted - D-046 had landed between D-042 and D-043 because it
 merged out of order.
+
+---
+
+## 2026-08-08 — M1 complete
+
+**Fixed the last open defect.** Q-013: the full-screen photo viewer left a strip of the
+thumbnail grid visible at the bottom and a grey status-bar area at the top.
+`usePlatformDefaultWidth = false` alone keeps a `Dialog` inset from the screen edges;
+`decorFitsSystemWindows = false` was also needed to let it run under the system bars.
+Verified on the emulator - black edge to edge, nothing showing through. Q-013 closed.
+
+**M1 marked done.** Three checklist items were unticked but had actually been resolved:
+incremental sync landed, empty states were settled as "show nothing" (D-044), and startup
+measurement was deferred (D-045). The roadmap now reflects reality rather than lagging it -
+the third time this session that the checklist had drifted behind the code.
+
+**What the MVP does, end to end:** opens straight onto a world map, scans the library for
+geotagged photos, renders them as clusters with live counts that divide and coalesce on
+zoom, and tapping a cluster opens every photo inside it in a grid that taps through to full
+screen. After the first scan it reads only what is new, so launches are instant.
+
+Every piece was verified running on an emulator against the fixture, not merely compiled.
+
+**The honest gap, stated in the roadmap rather than buried:** the fixture is 22 photos.
+Behaviour against tens of thousands is untested, and Q-010 stays open.
+
+**Next decision is M2 versus M3, and it depends on data nobody has yet.** M2 is performance
+work - viewport-bounded queries, precomputed cluster tiers - which hard rule 9 forbids
+building against imagined numbers. M3 is offline geocoding and the stats screen, which is
+what the owner asked for in the first conversation. Running the app against the real library
+settles it: if it stays smooth, M2 is premature.
+
+Q-010 re-labelled from "non-blocking, revisit during M1" to "blocks the M2-vs-M3 decision",
+since that is now what it actually gates.

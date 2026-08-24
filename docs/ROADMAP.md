@@ -3,7 +3,7 @@
 Status values: `not started`, `in progress`, `done`, `blocked`.
 Update this file whenever a milestone's status changes.
 
-**Current milestone: M1, in progress. Core loop works; sync and edge-case states remain.**
+**M1 is complete. Next: M2 or M3 - see the note under M2.**
 
 Reordered 2026-08-08 around the MVP definition in D-013, then adjusted the same day after
 the owner examined the reference implementation (Samsung Gallery) directly. The MVP is M1
@@ -43,28 +43,35 @@ the phone itself (D-028). All questions answered:
 
 **Nothing blocks M1.**
 
-## M1 · The MVP — `in progress`
+## M1 · The MVP — `done` (2026-08-08)
+
 **This is the product.** A map opening on the whole library, numbered clusters that divide
-and coalesce as you zoom, and tap-through to the photos behind any cluster. Shippable and
-genuinely useful on its own.
+and coalesce as you zoom, and tap-through to the photos behind any cluster.
 
 - [x] Compose app shell that launches **straight to the map** — no splash, no menu
 - [x] Library scan reading id + lat/lng + date for every geotagged photo
 - [x] Room persistence — required (D-027); schema includes mediaType from day one (D-032)
 - [x] Clustering with exact-count badges via MapLibre GeoJSON `cluster = true`
       plus circle + symbol layers on `point_count` (D-014, D-018, D-036)
-- [x] Tap a cluster → bottom-sheet thumbnail grid → tap a thumbnail → full screen (D-016)
+- [x] Tap a cluster → bottom-sheet thumbnail grid → tap a thumbnail → full screen (D-016),
+      showing **every** photo in the cluster, no cap (D-043)
 - [x] Permission flow covering the Full and Curated tiers (DESIGN.md §10)
-- [ ] Incremental sync on foreground + WorkManager periodic job (D-006)
-- [ ] Empty, permission-denied and no-geotagged-photos states
-- [ ] Measure cold-start-to-map and keep it honest (D-013)
+- [x] Incremental sync on foreground + WorkManager periodic job (D-006), with deletion
+      reconciliation (D-040)
+- [x] Empty state — **an empty map is the answer** (D-044). No placeholder screen; the
+      action button already reads "Grant photo access" when access is missing
+- [x] Full-screen viewer covers the whole screen (Q-013, closed)
+- [ ] ~~Measure cold-start-to-map~~ — **deferred** (D-045). The app is still gaining
+      features that would make any figure obsolete within a milestone
 - [x] ~~Badge bitmap cache keyed by number~~ — **not applicable on MapLibre.** The count is
-      text drawn by a SymbolLayer from `point_count`, not a generated bitmap, so there is
-      nothing to cache (D-039)
+      text drawn by a SymbolLayer from `point_count`, not a generated bitmap (D-039)
 
-Verified running on the emulator against the 22-photo fixture, not merely compiling: scan
-reported 22 of 23 located, a `9` badge rendered over Texas, and tapping it opened a sheet
-reading "9 photos".
+Every item was verified running on an emulator against the 22-photo fixture, not merely
+compiled. Highlights: the scan matched independently established ground truth exactly, a
+cold second launch showed the map with no rescan, and deleting files dropped their pins.
+
+**Not yet verified at real scale.** The fixture is a couple of dozen photos. Behaviour
+against a library of tens of thousands is untested and Q-010 remains open.
 
 Explicitly **not** in M1: geocoding, place names, stats, trips, manual placement, exclusion
 zones, photo thumbnails inside markers, cluster split animation. See hard rule 8.

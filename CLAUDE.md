@@ -110,12 +110,15 @@ The repo is at https://github.com/AdamLewis73/PhotoGlobe
 
 ## Current state
 
-**M0 and M0.5 are done. M1 is in progress and the core loop works.**
+**M1 is complete. The MVP works.**
 
-The app builds, runs, and has been verified end to end on an emulator against the test
-fixture: the map opens on launch, the library scan finds geotagged photos, clusters render
-with count badges, and tapping a cluster opens a photo grid that taps through to full
-screen.
+The app opens straight onto a world map, scans the photo library for geotagged photos,
+renders them as clusters with live counts that divide and coalesce as you zoom, and tapping
+a cluster opens every photo inside it in a grid that taps through to full screen. After the
+first scan it only reads what is new, so launches are instant.
+
+Everything was verified running on an emulator against a 22-photo fixture, not merely
+compiled.
 
 What M0 proved, on an emulator rather than the owner's phone (D-028):
 
@@ -126,22 +129,25 @@ What M0 proved, on an emulator rather than the owner's phone (D-028):
 - No shortcut exists — per-file EXIF reads are mandatory (D-026)
 - ~4.16 ms/photo, so **Room is required** (D-027)
 
-M0.5 settled the stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037),
-minSdk 33 / targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google
-Cloud account, no API key, no billing.
+The stack: **MapLibre** with a key-free CARTO Positron style (D-036, D-037), minSdk 33 /
+targetSdk 36 (D-033), videos schema-ready but not scanned (D-032). No Google Cloud account,
+no API key, no billing.
 
-**Remaining in M1:** incremental sync (D-006), and the empty / permission-denied /
-no-geotagged-photos states. See `docs/ROADMAP.md`.
+**The next decision is M2 versus M3, and it depends on data nobody has.** M2 is performance
+work - viewport-bounded queries and precomputed cluster tiers - which hard rule 9 says must
+not be built against imagined numbers. M3 is offline geocoding and the stats screen, which
+is user-visible value. **Run the app against the real library first** (Q-010); if it stays
+smooth, M2 is premature and M3 should come next.
 
 **Test fixture:** 22 real geotagged photos at `E:\PhotoGlobe-testphotos`, outside the repo.
 See D-029 for the emulator load procedure — the `scan_volume` step is mandatory and
 non-obvious. Emulator `Pixel_9_Pro` (API 36) is configured and has been used throughout.
 
-**Known rough edges, filed not hidden:** Q-012 (tapping a huge cluster would load 500 rows
-into an unusable grid), Q-013 (full-screen viewer does not quite cover the screen), Q-011
-(79 MB debug APK — MapLibre ships every ABI).
+**Known open items:** Q-010 (real-scale behaviour unmeasured), Q-011 (79 MB debug APK —
+MapLibre ships every ABI), Q-002 (does the owner shoot with a standalone camera, which
+decides how much M4 matters).
 
-**Repo:** https://github.com/AdamLewis73/PhotoGlobe — all changes via branch + PR (D-038).
+**Repo:** https://github.com/AdamLewis73/PhotoGlobe — one PR at a time (D-047).
 
 ## Document map
 
